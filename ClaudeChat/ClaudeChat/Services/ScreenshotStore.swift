@@ -10,9 +10,9 @@ enum ScreenshotStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .directoryCreationFailed:
-            return "Screenshot-Verzeichnis konnte nicht erstellt werden."
+            return "Screenshot directory could not be created."
         case .pngEncodingFailed:
-            return "Screenshot konnte nicht als PNG gespeichert werden."
+            return "Screenshot could not be saved as PNG."
         }
     }
 }

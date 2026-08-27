@@ -10,7 +10,7 @@ struct Conversation: Identifiable, Codable, Equatable {
 
     init(
         id: UUID = UUID(),
-        title: String = "Neue Konversation",
+        title: String = "New Conversation",
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         claudeSessionId: String? = nil,

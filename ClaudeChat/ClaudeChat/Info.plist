@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>de</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,6 +27,6 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Claude Chat benötigt Zugriff auf Finder und Vorschau, um markierte oder geöffnete Dateien an die KI zu senden.</string>
+	<string>Claude Chat needs access to Finder and Preview to send selected or open files to the AI.</string>
 </dict>
 </plist>

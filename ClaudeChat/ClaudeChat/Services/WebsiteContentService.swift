@@ -16,15 +16,15 @@ enum WebsiteContentServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .hostNotInstalled:
-            return "Native-Messaging-Host ist nicht installiert. Bitte Claude Chat neu starten."
+            return "Native Messaging host is not installed. Please restart Claude Chat."
         case .socketConnectionFailed:
-            return "Keine Verbindung zum Browser. Firefox/Zen muss laufen und die Claude-Chat-Extension muss aktiv sein."
+            return "No connection to the browser. Firefox/Zen must be running and the Claude Chat extension must be active."
         case .requestFailed(let message):
             return message
         case .invalidResponse:
-            return "Ungültige Antwort vom Browser."
+            return "Invalid response from the browser."
         case .emptyContent:
-            return "Kein lesbarer Inhalt auf der aktiven Seite gefunden."
+            return "No readable content found on the active page."
         }
     }
 }
@@ -143,7 +143,7 @@ enum WebsiteContentService {
 
         let ok = json["ok"] as? Bool ?? false
         if !ok {
-            let error = json["error"] as? String ?? "Unbekannter Fehler"
+            let error = json["error"] as? String ?? "Unknown error"
             throw WebsiteContentServiceError.requestFailed(error)
         }
 
@@ -211,7 +211,7 @@ enum WebsiteContentService {
             parts.append("URL: \(content.url)")
         }
         if !content.title.isEmpty {
-            parts.append("Titel: \(content.title)")
+            parts.append("Title: \(content.title)")
         }
         if !parts.isEmpty {
             parts.append("")
@@ -228,14 +228,14 @@ enum WebsiteContentService {
             parts.append("")
         }
 
-        parts.append("Analysiere diese Website:")
+        parts.append("Analyze this website:")
         if !content.url.isEmpty {
             parts.append("URL: \(content.url)")
         }
         if !content.title.isEmpty {
-            parts.append("Titel: \(content.title)")
+            parts.append("Title: \(content.title)")
         }
-        parts.append("Inhalt:")
+        parts.append("Content:")
         parts.append(content.text)
 
         return parts.joined(separator: "\n")

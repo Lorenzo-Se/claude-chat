@@ -72,7 +72,7 @@ private func encodeSocketResponse(ok: Bool, title: String? = nil, url: String? =
     if let url { payload["url"] = url }
     if let text { payload["text"] = text }
     if let error { payload["error"] = error }
-    let data = (try? JSONSerialization.data(withJSONObject: payload)) ?? Data("{\"ok\":false,\"error\":\"Encoding fehlgeschlagen\"}".utf8)
+    let data = (try? JSONSerialization.data(withJSONObject: payload)) ?? Data("{\"ok\":false,\"error\":\"Encoding failed\"}".utf8)
     return data + Data([0x0A])
 }
 
@@ -90,7 +90,7 @@ private func unixSocketAddressLength(path: String) -> socklen_t {
 
 private func handleExtensionMessage(_ data: Data) {
     guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        fulfillPendingSocketResponse(encodeSocketResponse(ok: false, error: "Ungültige Extension-Antwort"))
+        fulfillPendingSocketResponse(encodeSocketResponse(ok: false, error: "Invalid extension response"))
         return
     }
 
@@ -158,7 +158,7 @@ private func handleSocketClient(_ clientFD: Int32) {
     guard !buffer.isEmpty else { return }
 
     let semaphore = DispatchSemaphore(value: 0)
-    var responseData = encodeSocketResponse(ok: false, error: "Zeitüberschreitung")
+    var responseData = encodeSocketResponse(ok: false, error: "Timeout")
 
     pendingLock.lock()
     pendingSocketResponses.append { response in
@@ -177,7 +177,7 @@ private func handleSocketClient(_ clientFD: Int32) {
             pendingSocketResponses.removeLast()
         }
         pendingLock.unlock()
-        responseData = encodeSocketResponse(ok: false, error: "Unbekannte Anfrage")
+        responseData = encodeSocketResponse(ok: false, error: "Unknown request")
         responseData.withUnsafeBytes { bytes in
             _ = write(clientFD, bytes.baseAddress, responseData.count)
         }
@@ -194,7 +194,7 @@ private func handleSocketClient(_ clientFD: Int32) {
             pendingSocketResponses.removeLast()
         }
         pendingLock.unlock()
-        responseData = encodeSocketResponse(ok: false, error: "Extension hat nicht rechtzeitig geantwortet")
+        responseData = encodeSocketResponse(ok: false, error: "Extension did not respond in time")
     }
 
     responseData.withUnsafeBytes { bytes in

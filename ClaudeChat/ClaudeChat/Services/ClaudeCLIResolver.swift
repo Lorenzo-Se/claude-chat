@@ -7,9 +7,9 @@ enum ClaudeCLIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notFound:
-            return "Claude CLI nicht gefunden. Bitte installiere Claude Code und führe `claude login` im Terminal aus."
+            return "Claude CLI not found. Please install Claude Code and run `claude login` in the terminal."
         case .resolutionFailed(let detail):
-            return "Claude CLI konnte nicht aufgelöst werden: \(detail)"
+            return "Could not resolve Claude CLI: \(detail)"
         }
     }
 }

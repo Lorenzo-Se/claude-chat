@@ -85,13 +85,13 @@ final class StreamJSONParser {
                 is_error: isError
             )
             if isError {
-                update.errorMessage = json["result"] as? String ?? "Unbekannter Fehler"
+                update.errorMessage = json["result"] as? String ?? "Unknown error"
             }
 
         case "error":
             update.errorMessage = json["error"] as? String
                 ?? json["message"] as? String
-                ?? "Unbekannter Fehler"
+                ?? "Unknown error"
 
         default:
             break

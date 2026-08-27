@@ -63,7 +63,7 @@ enum AutomationPermissionManager {
         do {
             _ = try AppleScriptRunner.execute(script)
         } catch {
-            // Dialog oder Ablehnung — Ergebnis wird danach erneut geprüft.
+            // Dialog or denial — result is checked again afterward.
         }
     }
 
@@ -71,24 +71,24 @@ enum AutomationPermissionManager {
     private static func showPermissionDeniedAlert(finderGranted: Bool, previewGranted: Bool) {
         var missing: [String] = []
         if !finderGranted { missing.append("Finder") }
-        if !previewGranted { missing.append("Vorschau") }
+        if !previewGranted { missing.append("Preview") }
 
         let missingList = missing.joined(separator: ", ")
 
         let alert = NSAlert()
-        alert.messageText = "Automation-Berechtigung erforderlich"
+        alert.messageText = "Automation permission required"
         alert.informativeText = """
-        Claude Chat benötigt Zugriff auf \(missingList), um markierte Dateien oder geöffnete Dokumente zu erkennen.
+        Claude Chat needs access to \(missingList) to detect selected files or open documents.
 
-        macOS zeigt beim ersten Mal einen Dialog — erlaube die Steuerung von Finder und Vorschau.
+        macOS shows a dialog the first time — allow control of Finder and Preview.
 
-        Falls kein Dialog erscheint: Systemeinstellungen → Datenschutz & Sicherheit → Automation → Claude Chat aktivieren und die fehlenden Apps erlauben.
+        If no dialog appears: System Settings → Privacy & Security → Automation → enable Claude Chat and allow the missing apps.
 
-        Wichtig: Die App muss nach dem Update neu gebaut und gestartet werden, damit sie in der Automation-Liste erscheint.
+        Important: rebuild and restart the app after updating so it appears in the Automation list.
         """
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Systemeinstellungen öffnen")
-        alert.addButton(withTitle: "Abbrechen")
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
 
         if alert.runModal() == .alertFirstButtonReturn {
             openAutomationSettings()
@@ -116,11 +116,11 @@ enum AppleScriptRunner {
         var errorDescription: String? {
             switch self {
             case .scriptCreationFailed:
-                return "AppleScript konnte nicht erstellt werden."
+                return "AppleScript could not be created."
             case .automationDenied:
-                return "Automation-Berechtigung verweigert."
+                return "Automation permission denied."
             case .failed(let message, let code):
-                return "AppleScript-Fehler (\(code)): \(message)"
+                return "AppleScript error (\(code)): \(message)"
             }
         }
     }
@@ -134,7 +134,7 @@ enum AppleScriptRunner {
 
         let output = script.executeAndReturnError(&errorInfo)
         if let errorInfo {
-            let message = (errorInfo[NSAppleScript.errorMessage] as? String) ?? "Unbekannter Fehler"
+            let message = (errorInfo[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
             let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
 
             if code == -1743 || message.localizedCaseInsensitiveContains("not authorized") {

@@ -7,9 +7,9 @@ enum AttachmentStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .directoryCreationFailed:
-            return "Anhang-Verzeichnis konnte nicht erstellt werden."
+            return "Attachment directory could not be created."
         case .copyFailed(let path):
-            return "Datei konnte nicht angehängt werden: \(path)"
+            return "Could not attach file: \(path)"
         }
     }
 }
@@ -50,7 +50,7 @@ final class AttachmentStore {
         }
     }
 
-    /// Kopiert eine Datei in den App-Cache und gibt den neuen Pfad zurück.
+    /// Copies a file into the app cache and returns the new path.
     func importFile(from sourcePath: String) throws -> String {
         try ensureDirectory()
 

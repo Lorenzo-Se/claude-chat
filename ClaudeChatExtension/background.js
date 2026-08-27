@@ -17,7 +17,7 @@ function extensionDebugInfo() {
 function logStartupInfo() {
   const info = extensionDebugInfo();
   console.log(
-    "Claude Chat: Extension gestartet.",
+    "Claude Chat: Extension started.",
     "runtime.id:",
     info.runtimeId,
     "origin:",
@@ -44,7 +44,7 @@ function connectNative(force = false) {
   try {
     nativePort = browser.runtime.connectNative(NATIVE_HOST);
   } catch (error) {
-    console.error("Claude Chat: connectNative Exception:", error);
+    console.error("Claude Chat: connectNative exception:", error);
     clearNativePort();
     scheduleReconnect();
     return;
@@ -53,7 +53,7 @@ function connectNative(force = false) {
   const connectError = browser.runtime.lastError;
   if (connectError) {
     console.error(
-      "Claude Chat: connectNative fehlgeschlagen:",
+      "Claude Chat: connectNative failed:",
       connectError.message,
       extensionDebugInfo()
     );
@@ -62,7 +62,7 @@ function connectNative(force = false) {
     return;
   }
 
-  console.log("Claude Chat: Native Host verbunden.", extensionDebugInfo());
+  console.log("Claude Chat: Native host connected.", extensionDebugInfo());
 
   nativePort.onMessage.addListener(async (message) => {
     if (!message || message.action !== "extract") {
@@ -74,7 +74,7 @@ function connectNative(force = false) {
       nativePort.postMessage(result);
     } catch (error) {
       nativePort.postMessage({
-        error: error.message || "Extraktion fehlgeschlagen",
+        error: error.message || "Extraction failed",
       });
     }
   });
@@ -83,12 +83,12 @@ function connectNative(force = false) {
     const lastError = browser.runtime.lastError;
     if (lastError) {
       console.warn(
-        "Claude Chat: Native Host getrennt:",
+        "Claude Chat: Native host disconnected:",
         lastError.message,
         extensionDebugInfo()
       );
     } else {
-      console.warn("Claude Chat: Native Host getrennt (ohne lastError).", extensionDebugInfo());
+      console.warn("Claude Chat: Native host disconnected (no lastError).", extensionDebugInfo());
     }
     clearNativePort();
     scheduleReconnect();
@@ -106,7 +106,7 @@ function startKeepalive() {
     try {
       nativePort.postMessage({ action: "ping" });
     } catch (error) {
-      console.warn("Claude Chat: Keepalive fehlgeschlagen", error);
+      console.warn("Claude Chat: Keepalive failed", error);
     }
   }, KEEPALIVE_INTERVAL_MS);
 }
@@ -133,17 +133,17 @@ async function extractFromActiveTab() {
   const tab = tabs[0];
 
   if (!tab || !tab.id) {
-    throw new Error("Kein aktiver Tab gefunden.");
+    throw new Error("No active tab found.");
   }
 
   if (tab.url && (tab.url.startsWith("about:") || tab.url.startsWith("moz-extension:"))) {
-    throw new Error("Auf dieser Seite kann kein Inhalt extrahiert werden.");
+    throw new Error("Content cannot be extracted from this page.");
   }
 
   const response = await browser.tabs.sendMessage(tab.id, { action: "extract" });
 
   if (!response || response.error) {
-    throw new Error(response?.error || "Content-Script hat nicht geantwortet.");
+    throw new Error(response?.error || "Content script did not respond.");
   }
 
   return {

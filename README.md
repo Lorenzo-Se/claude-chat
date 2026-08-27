@@ -1,161 +1,161 @@
 # Claude Chat
 
-Native macOS-Menüleisten-App mit schwebendem Chat-Fenster, das **Claude Code** im Headless-Modus (`claude -p`) als Backend nutzt — authentifiziert über dein bestehendes Claude-Abo, nicht über API-Billing.
+Native macOS menu bar app with a floating chat window that uses **Claude Code** in headless mode (`claude -p`) as its backend — authenticated via your existing Claude subscription, not API billing.
 
-Die App läuft dauerhaft im Hintergrund (kein Dock-Icon), lässt sich per globalem Shortcut ein- und ausblenden und unterstützt Screenshots, Website-Extraktion aus Firefox/Zen sowie das Senden von Dateien aus Finder und Vorschau.
+The app runs permanently in the background (no Dock icon), can be shown and hidden via a global shortcut, and supports screenshots, website extraction from Firefox/Zen, and sending files from Finder and Preview.
 
-## Funktionen
+## Features
 
-- **Floating Chat-Fenster** — per Shortcut ein-/ausblendbar, bleibt auf allen Desktops sichtbar
-- **Claude Code Integration** — nutzt die lokal eingeloggte CLI-Session (`claude login`)
-- **Streaming-Antworten** — Live-Anzeige während Claude antwortet
-- **Mehrere Konversationen** — parallele Chats mit Session-Verwaltung (`--resume`)
-- **Screenshots** — Vollbild oder Bereichsauswahl, direkt an Claude senden
-- **Website-Extraktion** — Inhalt des aktiven Firefox-/Zen-Tabs per WebExtension + Native Messaging
-- **Dateien senden** — markierte Finder-Dateien oder geöffnete Vorschau-Dokumente
-- **Anpassbare Shortcuts** — alle Hotkeys in den Einstellungen konfigurierbar
-- **Start bei Login** — optional über die Einstellungen
+- **Floating chat window** — toggle via shortcut, visible on all desktops
+- **Claude Code integration** — uses your locally logged-in CLI session (`claude login`)
+- **Streaming responses** — live display while Claude is replying
+- **Multiple conversations** — parallel chats with session management (`--resume`)
+- **Screenshots** — full screen or region selection, sent directly to Claude
+- **Website extraction** — content from the active Firefox/Zen tab via WebExtension + Native Messaging
+- **Send files** — selected Finder files or open Preview documents
+- **Customizable shortcuts** — all hotkeys configurable in Settings
+- **Launch at login** — optional via Settings
 
-## Voraussetzungen
+## Requirements
 
-| Anforderung | Details |
+| Requirement | Details |
 |---|---|
-| **macOS** | 14.0 (Sonoma) oder neuer |
-| **Claude Code CLI** | Installiert und mit `claude login` authentifiziert |
-| **Firefox oder Zen** | Nur für die Website-Extraktion (WebExtension erforderlich) |
-| **Xcode** | Nur zum Bauen aus dem Quellcode (15+) |
+| **macOS** | 14.0 (Sonoma) or later |
+| **Claude Code CLI** | Installed and authenticated with `claude login` |
+| **Firefox or Zen** | Website extraction only (WebExtension required) |
+| **Xcode** | Building from source only (15+) |
 
 ## Installation
 
-### Vorgebautes DMG
+### Pre-built DMG
 
-1. `ClaudeChat-0.1.0.dmg` öffnen
-2. **Claude Chat.app** nach **Programme** ziehen und einmal starten
-3. Firefox-Extension installieren: `about:addons` → Zahnrad → **Add-on aus Datei installieren…** → `claude-chat-website-extractor-1.0.0.xpi` aus dem DMG wählen
-4. Browser neu starten (empfohlen)
+1. Open `ClaudeChat-0.1.0.dmg`
+2. Drag **Claude Chat.app** to **Applications** and launch it once
+3. Install the Firefox extension: `about:addons` → gear icon → **Install Add-on From File…** → select `claude-chat-website-extractor-1.0.0.xpi` from the DMG
+4. Restart the browser (recommended)
 
-Beim ersten Start registriert die App automatisch den Native-Messaging-Host für Firefox/Zen.
+On first launch, the app automatically registers the Native Messaging host for Firefox/Zen.
 
-### Aus dem Quellcode bauen
+### Build from source
 
 ```bash
-# App bauen
+# Build the app
 ./scripts/build-release.sh
 
-# Vollständiges Release (App + signierte Extension + DMG)
+# Full release (app + signed extension + DMG)
 ./scripts/build-distribution.sh
 ```
 
-Details zu Code Signing und Notarisierung: [docs/RELEASE.md](docs/RELEASE.md)
+Details on code signing and notarization: [docs/RELEASE.md](docs/RELEASE.md)
 
-## Erste Schritte
+## Getting started
 
-1. **Claude Code CLI einrichten** (falls noch nicht geschehen):
+1. **Set up the Claude Code CLI** (if not already done):
 
    ```bash
-   # Installation je nach Setup, z. B.:
+   # Installation depends on your setup, e.g.:
    npm install -g @anthropic-ai/claude-code
    claude login
    ```
 
-2. **Claude Chat starten** — erscheint als Icon in der Menüleiste
-3. **Chat öffnen** mit dem Standard-Shortcut **⌃⌥⌘K** (oder Linksklick auf das Menüleisten-Icon)
-4. **Für Website-Extraktion:** Firefox-Extension installieren (siehe oben)
+2. **Launch Claude Chat** — appears as an icon in the menu bar
+3. **Open the chat** with the default shortcut **⌃⌥⌘K** (or left-click the menu bar icon)
+4. **For website extraction:** install the Firefox extension (see above)
 
-Fehlt die CLI oder die Anmeldung, zeigt die App eine Onboarding-Anleitung an.
+If the CLI is missing or you are not logged in, the app shows an onboarding guide.
 
-## Tastenkürzel
+## Keyboard shortcuts
 
-Alle Shortcuts sind in **Einstellungen…** (Menüleisten-Icon → Rechtsklick) anpassbar.
+All shortcuts can be customized in **Settings…** (menu bar icon → right-click).
 
-| Aktion | Standard |
+| Action | Default |
 |---|---|
-| Chat ein-/ausblenden | ⌃⌥⌘K |
-| Vollbild-Screenshot | ⌥⇧S |
-| Bereichs-Screenshot | ⌥⇧D |
-| Website extrahieren | ⌥⇧W |
-| Datei senden | ⌥⇧F |
-| Neue Konversation | ⌥⇧N |
+| Toggle chat | ⌃⌥⌘K |
+| Full-screen screenshot | ⌥⇧S |
+| Region screenshot | ⌥⇧D |
+| Extract website | ⌥⇧W |
+| Send file | ⌥⇧F |
+| New conversation | ⌥⇧N |
 
-## Berechtigungen
+## Permissions
 
-Die App fragt Berechtigungen erst beim ersten Nutzen des jeweiligen Features an:
+The app requests permissions only when you first use the corresponding feature:
 
-| Berechtigung | Wofür |
+| Permission | Purpose |
 |---|---|
-| **Bildschirmaufnahme** | Screenshot-Funktion |
-| **Automation (Finder/Vorschau)** | Datei senden |
-| **Native Messaging** | Website-Extraktion über Firefox/Zen |
+| **Screen Recording** | Screenshot feature |
+| **Automation (Finder/Preview)** | Send file |
+| **Native Messaging** | Website extraction via Firefox/Zen |
 
-Nach Erteilen der Bildschirmaufnahme-Berechtigung ist ein **Neustart der App** erforderlich.
+After granting Screen Recording permission, an **app restart** is required.
 
-## Firefox-Extension
+## Firefox extension
 
-Die WebExtension extrahiert Titel, URL und bereinigten Text des aktiven Tabs und leitet ihn über einen Native-Messaging-Host an die App weiter.
+The WebExtension extracts the title, URL, and cleaned text of the active tab and forwards it to the app via a Native Messaging host.
 
-- Ausführliche Anleitung und Fehlerbehebung: [ClaudeChatExtension/README.md](ClaudeChatExtension/README.md)
-- Für Entwicklung kann die Extension auch temporär über `about:debugging` geladen werden
+- Detailed setup and troubleshooting: [ClaudeChatExtension/README.md](ClaudeChatExtension/README.md)
+- For development, the extension can also be loaded temporarily via `about:debugging`
 
-## Projektstruktur
+## Project structure
 
 ```
 claude-chat/
-├── ClaudeChat/              # macOS-App (Swift/SwiftUI + AppKit)
+├── ClaudeChat/              # macOS app (Swift/SwiftUI + AppKit)
 │   └── ClaudeChat/
-│       ├── Services/        # CLI, Screenshots, Konversationen, Hotkeys, …
-│       ├── Views/           # Chat-UI, Einstellungen
+│       ├── Services/        # CLI, screenshots, conversations, hotkeys, …
+│       ├── Views/           # Chat UI, settings
 │       └── Windows/         # Floating NSPanel
 ├── ClaudeChatExtension/     # Firefox/Zen WebExtension
-├── ClaudeChatNativeHost/    # Native-Messaging-Host (stdin/stdout ↔ Unix-Socket)
-├── scripts/                 # Build-, Signier- und DMG-Skripte
-├── docs/                    # Release-Dokumentation
-└── SPEC.md                  # Technische Spezifikation
+├── ClaudeChatNativeHost/    # Native Messaging host (stdin/stdout ↔ Unix socket)
+├── scripts/                 # Build, signing, and DMG scripts
+├── docs/                    # Release documentation
+└── SPEC.md                  # Technical specification
 ```
 
-## Architektur
+## Architecture
 
 ```
-Menüleisten-App (LSUIElement)
-    ├── Floating NSPanel + SwiftUI-Chat
-    ├── Globale Hotkeys (HotKey-SPM)
-    ├── ScreenCaptureKit (Screenshots)
-    ├── AppleScript (Finder/Vorschau)
+Menu bar app (LSUIElement)
+    ├── Floating NSPanel + SwiftUI chat
+    ├── Global hotkeys (HotKey SPM)
+    ├── ScreenCaptureKit (screenshots)
+    ├── AppleScript (Finder/Preview)
     └── Claude Code CLI (claude -p, stream-json)
             ↑
-Firefox/Zen Extension → Native Messaging Host → Unix-Socket
+Firefox/Zen extension → Native Messaging host → Unix socket
 ```
 
-Die App startet für jede Nachricht einen `claude`-Subprozess und verwaltet Sessions über `--resume`. Konversationen werden als JSON-Dateien in `~/Library/Application Support/` gespeichert.
+The app spawns a `claude` subprocess for each message and manages sessions via `--resume`. Conversations are stored as JSON files in `~/Library/Application Support/`.
 
-## Entwicklung
+## Development
 
 ```bash
-# Release-Build
+# Release build
 ./scripts/build-release.sh
 
-# Nur DMG (App muss bereits existieren)
+# DMG only (app must already exist)
 ./scripts/create-dmg.sh
 
-# Extension signieren (benötigt Mozilla AMO API-Keys in scripts/amo-credentials.env)
+# Sign extension (requires Mozilla AMO API keys in scripts/amo-credentials.env)
 ./scripts/sign-extension.sh
 ```
 
-Öffne `ClaudeChat/ClaudeChat.xcodeproj` in Xcode für lokale Entwicklung mit Debugging.
+Open `ClaudeChat/ClaudeChat.xcodeproj` in Xcode for local development with debugging.
 
-## Bekannte Einschränkungen
+## Known limitations
 
-- Jede Nachricht startet einen neuen `claude`-Prozess (~1–2 s Cold-Start zusätzlich zur Antwortzeit)
-- Während aktiver Anfragen: ~100–250 MB RAM pro laufendem CLI-Prozess
-- Nutzung zählt gegen das gleiche Abo-Kontingent wie Claude Code im Terminal
-- Kein Mac App Store (Subprozesse und Native Messaging erfordern Verteilung außerhalb des Store)
-- Website-Extraktion aktuell nur für Firefox/Zen, nicht für Safari/Chrome
+- Each message starts a new `claude` process (~1–2 s cold start on top of response time)
+- During active requests: ~100–250 MB RAM per running CLI process
+- Usage counts against the same subscription quota as Claude Code in the terminal
+- Not available on the Mac App Store (subprocesses and Native Messaging require distribution outside the store)
+- Website extraction currently supports Firefox/Zen only, not Safari/Chrome
 
-## Lizenz
+## License
 
-Siehe Repository für Lizenzinformationen.
+See the repository for license information.
 
-## Weiterführend
+## Further reading
 
-- [SPEC.md](SPEC.md) — vollständige technische Spezifikation
-- [docs/RELEASE.md](docs/RELEASE.md) — Code Signing, Notarisierung, Distribution
-- [ClaudeChatExtension/README.md](ClaudeChatExtension/README.md) — Extension-Setup und Troubleshooting
+- [SPEC.md](SPEC.md) — full technical specification
+- [docs/RELEASE.md](docs/RELEASE.md) — code signing, notarization, distribution
+- [ClaudeChatExtension/README.md](ClaudeChatExtension/README.md) — extension setup and troubleshooting

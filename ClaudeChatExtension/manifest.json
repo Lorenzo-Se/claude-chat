@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Claude Chat Website Extractor",
-  "version": "1.0.0",
-  "description": "Extrahiert Website-Inhalte für die Claude Chat macOS App.",
+  "version": "1.0.1",
+  "description": "Extracts website content for the Claude Chat macOS app.",
   "browser_specific_settings": {
     "gecko": {
       "id": "claudechat@dev.local",

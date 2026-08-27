@@ -4,7 +4,7 @@ enum WebsiteExtractionConstants {
     static let bundleID = "dev.claudechat"
     static let nativeHostName = "dev.claudechat"
     static let extensionID = "claudechat@dev.local"
-    /// Firefox Native Messaging: `allowed_extensions` (nicht Chrome `allowed_origins`).
+    /// Firefox Native Messaging: `allowed_extensions` (not Chrome `allowed_origins`).
     static let allowedExtensions = [extensionID]
 
     static var applicationSupportDirectory: URL {
@@ -12,7 +12,7 @@ enum WebsiteExtractionConstants {
             .appendingPathComponent(bundleID, isDirectory: true)
     }
 
-    /// Ohne Leerzeichen im Pfad – Firefox startet Native-Messaging-Hosts sonst oft nicht.
+    /// No spaces in the path — Firefox often fails to start Native Messaging hosts otherwise.
     static var nativeHostDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claudechat", isDirectory: true)
@@ -35,7 +35,7 @@ enum WebsiteExtractionConstants {
         mozillaNativeMessagingHostsDirectory.appendingPathComponent("\(nativeHostName).json")
     }
 
-    /// Zen Browser nutzt dieselbe Mozilla Native-Messaging-Pfadstruktur.
+    /// Zen Browser uses the same Mozilla Native Messaging path structure.
     static var zenNativeMessagingHostsDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Zen/NativeMessagingHosts", isDirectory: true)

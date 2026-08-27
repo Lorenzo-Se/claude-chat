@@ -11,13 +11,13 @@ enum ScreenshotCaptureError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "Keine Berechtigung für Bildschirmaufnahme."
+            return "No screen recording permission."
         case .captureFailed(let detail):
-            return "Screenshot fehlgeschlagen: \(detail)"
+            return "Screenshot failed: \(detail)"
         case .noDisplays:
-            return "Kein Display für die Aufnahme gefunden."
+            return "No display found for capture."
         case .cropFailed:
-            return "Bereich konnte nicht zugeschnitten werden."
+            return "Could not crop the selected region."
         }
     }
 }
@@ -48,7 +48,7 @@ final class ScreenshotCaptureService {
         }
 
         guard let region = await regionController.selectRegion() else {
-            throw ScreenshotCaptureError.captureFailed("Auswahl abgebrochen")
+            throw ScreenshotCaptureError.captureFailed("Selection cancelled")
         }
 
         let fullImage = try await captureAllDisplaysComposite()
@@ -123,7 +123,7 @@ final class ScreenshotCaptureService {
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else {
-            throw ScreenshotCaptureError.captureFailed("Bitmap-Kontext konnte nicht erstellt werden")
+            throw ScreenshotCaptureError.captureFailed("Could not create bitmap context")
         }
 
         for capture in captures {
@@ -139,7 +139,7 @@ final class ScreenshotCaptureService {
         }
 
         guard let composite = context.makeImage() else {
-            throw ScreenshotCaptureError.captureFailed("Composite-Bild konnte nicht erstellt werden")
+            throw ScreenshotCaptureError.captureFailed("Could not create composite image")
         }
 
         return composite

@@ -1,6 +1,6 @@
 import AppKit
 
-/// Transparentes Overlay über allen Displays für Bereichsauswahl (analog ⌘⇧4).
+/// Transparent overlay across all displays for region selection (similar to ⌘⇧4).
 @MainActor
 final class RegionSelectionController {
     private var overlayWindows: [RegionOverlayWindow] = []
@@ -130,7 +130,7 @@ private final class RegionOverlayView: NSView {
             return
         }
 
-        // Lokales Rechteck in globale Bildschirmkoordinaten (Unten-Links-Origin)
+        // Convert local rect to global screen coordinates (bottom-left origin)
         let globalRect = CGRect(
             x: screen.frame.origin.x + localRect.origin.x,
             y: screen.frame.origin.y + localRect.origin.y,

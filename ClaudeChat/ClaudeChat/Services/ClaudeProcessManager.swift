@@ -20,15 +20,15 @@ enum ClaudeProcessError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .cliNotFound:
-            return "Claude CLI nicht gefunden. Bitte `claude login` im Terminal ausführen."
+            return "Claude CLI not found. Please run `claude login` in the terminal."
         case .processFailed(let code, let stderr):
-            return "Claude-Prozess fehlgeschlagen (Exit \(code)): \(stderr)"
+            return "Claude process failed (exit \(code)): \(stderr)"
         case .parseFailed(let detail):
-            return "Antwort konnte nicht gelesen werden: \(detail)"
+            return "Could not read response: \(detail)"
         case .timeout:
-            return "Zeitüberschreitung nach 120 Sekunden."
+            return "Timed out after 120 seconds."
         case .cancelled:
-            return "Anfrage abgebrochen."
+            return "Request cancelled."
         }
     }
 }
@@ -43,9 +43,9 @@ final class ClaudeProcessManager: ObservableObject {
     private var timedOutConversationIds: Set<UUID> = []
     private let timeoutSeconds: TimeInterval = 120
 
-    /// Headless-Settings: keine interaktiven Dialoge, Tools vorab freigegeben.
-    /// Kein `--dangerously-skip-permissions` — das zeigt einen Bypass-Dialog, den man ablehnen kann,
-    /// während Claude trotzdem weitermacht.
+    /// Headless settings: no interactive dialogs, tools pre-approved.
+    /// No `--dangerously-skip-permissions` — that shows a bypass dialog you can reject,
+    /// while Claude may continue anyway.
     private static let headlessSettingsJSON = """
     {"permissions":{"defaultMode":"dontAsk","allow":["Bash(*)","Read(*)","Edit(*)","Write(*)","Glob(*)","Grep(*)","WebFetch(*)","WebSearch(*)","Task(*)","NotebookEdit(*)","MultiEdit(*)","TodoWrite(*)","Agent(*)","mcp__*"]}}
     """
@@ -63,7 +63,7 @@ final class ClaudeProcessManager: ObservableObject {
         let effectiveStreaming = streamingEnabled ?? AppSettings.shared.streamingEnabled
 
         guard activeProcesses[conversationId] == nil else {
-            throw ClaudeProcessError.processFailed(exitCode: -1, stderr: "Bereits ein Request aktiv für diese Konversation.")
+            throw ClaudeProcessError.processFailed(exitCode: -1, stderr: "A request is already active for this conversation.")
         }
 
         let cliPath: String
@@ -124,9 +124,9 @@ final class ClaudeProcessManager: ObservableObject {
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "Analysiere diese Datei: \(attachmentPath)"
+            return "Analyze this file: \(attachmentPath)"
         }
-        return "\(trimmed)\n\nDatei: \(attachmentPath)"
+        return "\(trimmed)\n\nFile: \(attachmentPath)"
     }
 
     private func runProcess(
@@ -252,7 +252,7 @@ final class ClaudeProcessManager: ObservableObject {
                     guard let jsonData = stdoutData.nonEmpty,
                           let response = try? JSONDecoder().decode(ClaudeResponse.self, from: jsonData) else {
                         continuation.resume(throwing: ClaudeProcessError.parseFailed(
-                            stderr.isEmpty ? "Keine JSON-Antwort erhalten" : stderr
+                            stderr.isEmpty ? "No JSON response received" : stderr
                         ))
                         return
                     }
@@ -260,7 +260,7 @@ final class ClaudeProcessManager: ObservableObject {
                     if response.isError {
                         continuation.resume(throwing: ClaudeProcessError.processFailed(
                             exitCode: 1,
-                            stderr: response.result ?? "Unbekannter Fehler"
+                            stderr: response.result ?? "Unknown error"
                         ))
                     } else {
                         continuation.resume(returning: response)
@@ -458,7 +458,7 @@ final class ClaudeProcessManager: ObservableObject {
                         if finalResponse.isError {
                             finish(.failure(ClaudeProcessError.processFailed(
                                 exitCode: 1,
-                                stderr: finalResponse.result ?? "Unbekannter Fehler"
+                                stderr: finalResponse.result ?? "Unknown error"
                             )))
                         } else {
                             let resolved = ClaudeResponse(
@@ -485,7 +485,7 @@ final class ClaudeProcessManager: ObservableObject {
                     }
 
                     finish(.failure(ClaudeProcessError.parseFailed(
-                        stderr.isEmpty ? "Keine stream-json-Antwort erhalten" : stderr
+                        stderr.isEmpty ? "No stream-json response received" : stderr
                     )))
                 }
             }

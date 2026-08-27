@@ -22,14 +22,14 @@ struct ShortcutRecorderView: View {
                     startRecording()
                 }
             } label: {
-                Text(isRecording ? "Tastenkombination drücken …" : combo.displayLabel)
+                Text(isRecording ? "Press shortcut…" : combo.displayLabel)
                     .font(.system(.body, design: .monospaced))
                     .frame(minWidth: 140)
             }
             .buttonStyle(.bordered)
             .foregroundStyle(isRecording ? .orange : .primary)
 
-            Button("Zurücksetzen", action: onReset)
+            Button("Reset", action: onReset)
                 .buttonStyle(.borderless)
         }
         .onDisappear {
@@ -47,7 +47,7 @@ struct ShortcutRecorderView: View {
                 return event
             }
 
-            if event.keyCode == 53 { // Escape — Aufnahme abbrechen, Fenster nicht schließen
+            if event.keyCode == 53 { // Escape — cancel recording without closing the window
                 stopRecording()
                 return nil
             }
@@ -83,7 +83,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Tastenkürzel") {
+            Section("Keyboard shortcuts") {
                 ForEach(HotkeyAction.allCases) { action in
                     ShortcutRecorderView(
                         title: action.title,
@@ -92,32 +92,32 @@ struct SettingsView: View {
                     )
                 }
 
-                Button("Alle Tastenkürzel zurücksetzen") {
+                Button("Reset all shortcuts") {
                     settings.resetAllHotkeys()
                     reloadHotkeyDrafts()
                 }
             }
 
             Section("Claude CLI") {
-                TextField("Pfad (leer = automatisch)", text: $draftCLIPath)
+                TextField("Path (empty = automatic)", text: $draftCLIPath)
                     .textFieldStyle(.roundedBorder)
 
                 HStack {
-                    Button("Übernehmen") {
+                    Button("Apply") {
                         settings.cliPathOverride = draftCLIPath
                     }
-                    Button("Cache leeren") {
+                    Button("Clear cache") {
                         ClaudeCLIResolver.invalidateCache()
                     }
                 }
 
-                Text("Leer lassen für automatische Erkennung via Login-Shell (`which claude`).")
+                Text("Leave empty for automatic detection via login shell (`which claude`).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Modell") {
-                Picker("Modell", selection: $settings.model) {
+            Section("Model") {
+                Picker("Model", selection: $settings.model) {
                     ForEach(ClaudeModelChoice.allCases) { choice in
                         Text(choice.title).tag(choice)
                     }
@@ -126,14 +126,14 @@ struct SettingsView: View {
             }
 
             Section("Streaming") {
-                Toggle("Live-Antworten (stream-json)", isOn: $settings.streamingEnabled)
-                Text("Aus = blockierendes JSON (Phase-1-Fallback, keine Live-Anzeige).")
+                Toggle("Live responses (stream-json)", isOn: $settings.streamingEnabled)
+                Text("Off = blocking JSON (Phase 1 fallback, no live display).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section("System") {
-                Toggle("Beim Login starten", isOn: $settings.launchAtLogin)
+                Toggle("Launch at login", isOn: $settings.launchAtLogin)
                     .onChange(of: settings.launchAtLogin) { _, enabled in
                         applyLaunchAtLogin(enabled)
                     }
@@ -146,56 +146,56 @@ struct SettingsView: View {
             }
 
             Section("Screenshot") {
-                Toggle("System-Prompt verwenden", isOn: $settings.screenshotSystemPromptEnabled)
+                Toggle("Use system prompt", isOn: $settings.screenshotSystemPromptEnabled)
 
                 if settings.screenshotSystemPromptEnabled {
                     TextEditor(text: $settings.screenshotSystemPrompt)
                         .font(.system(.body, design: .monospaced))
                         .frame(minHeight: 72)
 
-                    Text("Platzhalter: {path} (Screenshot-Pfad), {userText}")
+                    Text("Placeholders: {path} (screenshot path), {userText}")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Screenshot wird angehängt; Textfeld bleibt leer — manuell senden.")
+                    Text("Screenshot is attached; input field stays empty — send manually.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Divider()
 
-                Text("Nach dem Senden")
+                Text("After sending")
                     .font(.subheadline)
 
-                Toggle("Chat-Fenster öffnen nach Senden", isOn: $settings.screenshotOpenChatAfterSend)
-                Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.screenshotCopyToClipboardAfterSend)
-                Toggle("Antwort als Audio wiedergeben", isOn: $settings.screenshotPlayAudioAfterSend)
+                Toggle("Open chat window after send", isOn: $settings.screenshotOpenChatAfterSend)
+                Toggle("Copy response to clipboard", isOn: $settings.screenshotCopyToClipboardAfterSend)
+                Toggle("Speak response aloud", isOn: $settings.screenshotPlayAudioAfterSend)
             }
 
             Section("Website") {
-                Toggle("System-Prompt verwenden", isOn: $settings.websiteSystemPromptEnabled)
+                Toggle("Use system prompt", isOn: $settings.websiteSystemPromptEnabled)
 
                 if settings.websiteSystemPromptEnabled {
-                    Text("Standard-System-Prompt")
+                    Text("Default system prompt")
                         .font(.subheadline)
 
                     TextEditor(text: $settings.websiteSystemPrompt)
                         .font(.system(.body, design: .monospaced))
                         .frame(minHeight: 72)
 
-                    Text("Platzhalter: {url}, {title}, {content}")
+                    Text("Placeholders: {url}, {title}, {content}")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
                     Divider()
 
-                    Text("URL-Regeln (überschreiben Standard-Prompt)")
+                    Text("URL rules (override default prompt)")
                         .font(.subheadline)
 
                     ForEach($settings.websiteURLPromptOverrides) { $override in
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                TextField("Muster (z. B. github.com)", text: $override.pattern)
+                                TextField("Pattern (e.g. github.com)", text: $override.pattern)
                                     .textFieldStyle(.roundedBorder)
 
                                 Button {
@@ -204,7 +204,7 @@ struct SettingsView: View {
                                     Image(systemName: "trash")
                                 }
                                 .buttonStyle(.borderless)
-                                .help("Regel löschen")
+                                .help("Delete rule")
                             }
 
                             TextEditor(text: $override.prompt)
@@ -213,58 +213,58 @@ struct SettingsView: View {
                         }
                     }
 
-                    Button("URL-Regel hinzufügen") {
+                    Button("Add URL rule") {
                         settings.addWebsiteURLPromptOverride()
                     }
                 } else {
-                    Text("Extrahierter Inhalt (URL, Titel, Text) wird ins Eingabefeld gelegt — manuell senden.")
+                    Text("Extracted content (URL, title, text) is placed in the input field — send manually.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Divider()
 
-                Text("Nach dem Senden")
+                Text("After sending")
                     .font(.subheadline)
 
-                Toggle("Chat-Fenster öffnen nach Senden", isOn: $settings.websiteOpenChatAfterSend)
-                Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.websiteCopyToClipboardAfterSend)
-                Toggle("Antwort als Audio wiedergeben", isOn: $settings.websitePlayAudioAfterSend)
+                Toggle("Open chat window after send", isOn: $settings.websiteOpenChatAfterSend)
+                Toggle("Copy response to clipboard", isOn: $settings.websiteCopyToClipboardAfterSend)
+                Toggle("Speak response aloud", isOn: $settings.websitePlayAudioAfterSend)
             }
 
-            Section("Datei") {
-                Toggle("System-Prompt verwenden", isOn: $settings.fileSystemPromptEnabled)
+            Section("File") {
+                Toggle("Use system prompt", isOn: $settings.fileSystemPromptEnabled)
 
                 if settings.fileSystemPromptEnabled {
                     TextEditor(text: $settings.fileSystemPrompt)
                         .font(.system(.body, design: .monospaced))
                         .frame(minHeight: 72)
 
-                    Text("Platzhalter: {paths}, {path}, {filename}, {userText}")
+                    Text("Placeholders: {paths}, {path}, {filename}, {userText}")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Dateipfade werden ins Eingabefeld gelegt — manuell senden.")
+                    Text("File paths are placed in the input field — send manually.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Divider()
 
-                Text("Nach dem Senden")
+                Text("After sending")
                     .font(.subheadline)
 
-                Toggle("Chat-Fenster öffnen nach Senden", isOn: $settings.fileOpenChatAfterSend)
-                Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.fileCopyToClipboardAfterSend)
-                Toggle("Antwort als Audio wiedergeben", isOn: $settings.filePlayAudioAfterSend)
+                Toggle("Open chat window after send", isOn: $settings.fileOpenChatAfterSend)
+                Toggle("Copy response to clipboard", isOn: $settings.fileCopyToClipboardAfterSend)
+                Toggle("Speak response aloud", isOn: $settings.filePlayAudioAfterSend)
 
                 Divider()
 
-                Text("Claude Chat muss Finder und Vorschau steuern können. Beim ersten Mal erscheint ein macOS-Dialog — danach ist die App unter Automation sichtbar.")
+                Text("Claude Chat must be allowed to control Finder and Preview. macOS shows a dialog the first time — afterward the app appears under Automation.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Button("Automation-Berechtigungen anfordern") {
+                Button("Request automation permissions") {
                     AutomationPermissionManager.requestPermissionsFromSettings()
                 }
             }

@@ -55,7 +55,7 @@
     removeNoise(clone);
     const main = pickMainElement(clone);
     const text = normalizeText(main?.innerText || clone.body?.innerText || "");
-    const limited = text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) + "\n\n[… gekürzt]" : text;
+    const limited = text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) + "\n\n[… truncated]" : text;
 
     return {
       title: document.title || "",
@@ -72,12 +72,12 @@
     try {
       const result = extractPageContent();
       if (!result.text) {
-        sendResponse({ error: "Kein lesbarer Text auf dieser Seite." });
+        sendResponse({ error: "No readable text on this page." });
       } else {
         sendResponse(result);
       }
     } catch (error) {
-      sendResponse({ error: error.message || "Extraktion fehlgeschlagen." });
+      sendResponse({ error: error.message || "Extraction failed." });
     }
 
     return true;

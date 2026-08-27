@@ -5,7 +5,7 @@ struct ClaudeChatApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        // Verstecktes Fenster vor der Settings-Scene: liefert den SwiftUI-Kontext für `openSettings`.
+        // Hidden window before the Settings scene: provides the SwiftUI context for `openSettings`.
         Window("Hidden", id: SettingsBridge.windowID) {
             SettingsRegistrationView()
         }
@@ -88,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
 
         let toggleItem = NSMenuItem(
-            title: "Chat ein-/ausblenden (\(settings.label(for: .toggleChat)))",
+            title: "Toggle chat (\(settings.label(for: .toggleChat)))",
             action: #selector(togglePanel),
             keyEquivalent: ""
         )
@@ -96,7 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(toggleItem)
 
         let settingsItem = NSMenuItem(
-            title: "Einstellungen…",
+            title: "Settings…",
             action: #selector(openSettings),
             keyEquivalent: ","
         )
@@ -106,7 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "Beenden", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -192,8 +192,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 panelController?.show()
             }
             await chatViewModel?.sendScreenshot(path: path)
-        } catch ScreenshotCaptureError.captureFailed("Auswahl abgebrochen") {
-            // Keine Meldung bei Abbruch
+        } catch ScreenshotCaptureError.captureFailed("Selection cancelled") {
+            // No alert on cancel
         } catch {
             showCaptureError(error)
         }
@@ -223,14 +223,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Panel beim Auslösen nur öffnen, wenn der Nutzer Inhalt vor dem Senden bearbeiten muss.
+    /// Only open the panel on trigger when the user needs to edit content before sending.
     private func shouldShowPanelOnFeatureTrigger(systemPromptEnabled: Bool) -> Bool {
         !systemPromptEnabled
     }
 
     private func showCaptureError(_ error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Screenshot fehlgeschlagen"
+        alert.messageText = "Screenshot failed"
         alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
@@ -239,7 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showWebsiteExtractError(_ error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Website-Extraktion fehlgeschlagen"
+        alert.messageText = "Website extraction failed"
         alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
@@ -248,7 +248,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showFileSendError(_ error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Datei senden fehlgeschlagen"
+        alert.messageText = "Send file failed"
         alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")

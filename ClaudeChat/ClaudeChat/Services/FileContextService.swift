@@ -2,21 +2,21 @@ import AppKit
 import Foundation
 
 enum FileContextServiceError: LocalizedError {
-    case keineDateiGefunden
+    case noFileFound
     case automationDenied
     case invalidPath(String)
     case appleScriptFailed(String)
 
     var errorDescription: String? {
         switch self {
-        case .keineDateiGefunden:
-            return "Keine Datei gefunden. Öffne eine Datei in der Vorschau oder markiere Dateien im Finder."
+        case .noFileFound:
+            return "No file found. Open a file in Preview or select files in Finder."
         case .automationDenied:
-            return "Automation-Berechtigung fehlt. Erlaube Claude Chat in Systemeinstellungen → Datenschutz & Sicherheit → Automation die Steuerung von Vorschau und Finder."
+            return "Automation permission missing. Allow Claude Chat in System Settings → Privacy & Security → Automation to control Preview and Finder."
         case .invalidPath(let path):
-            return "Ungültiger oder nicht erreichbarer Pfad: \(path)"
+            return "Invalid or unreachable path: \(path)"
         case .appleScriptFailed(let detail):
-            return "AppleScript-Fehler: \(detail)"
+            return "AppleScript error: \(detail)"
         }
     }
 }
@@ -75,7 +75,7 @@ enum FileContextService {
             return [path]
         }
 
-        throw FileContextServiceError.keineDateiGefunden
+        throw FileContextServiceError.noFileFound
     }
 
     static func applyFileTemplate(_ template: String, paths: [String], userText: String = "") -> String {
@@ -145,7 +145,7 @@ enum FileContextService {
                 case .automationDenied:
                     throw FileContextServiceError.automationDenied
                 case .scriptCreationFailed:
-                    throw FileContextServiceError.appleScriptFailed("Script konnte nicht erstellt werden.")
+                    throw FileContextServiceError.appleScriptFailed("Could not create script.")
                 case .failed(let message, _):
                     throw FileContextServiceError.appleScriptFailed(message)
                 }

@@ -15,12 +15,12 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .toggleChat: return "Chat ein-/ausblenden"
-        case .fullscreenCapture: return "Vollbild-Screenshot"
-        case .regionCapture: return "Bereichs-Screenshot"
-        case .websiteExtract: return "Website extrahieren"
-        case .sendActiveFile: return "Datei senden"
-        case .newConversation: return "Neue Konversation"
+        case .toggleChat: return "Toggle chat"
+        case .fullscreenCapture: return "Full-screen screenshot"
+        case .regionCapture: return "Region screenshot"
+        case .websiteExtract: return "Extract website"
+        case .sendActiveFile: return "Send file"
+        case .newConversation: return "New conversation"
         }
     }
 
@@ -52,14 +52,14 @@ enum ClaudeModelChoice: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .default: return "Standard (CLI-Default)"
+        case .default: return "Default (CLI default)"
         case .sonnet: return "Sonnet"
         case .opus: return "Opus"
         case .haiku: return "Haiku"
         }
     }
 
-    /// CLI-Wert für `--model`; nil = kein Flag setzen.
+    /// CLI value for `--model`; nil = do not set the flag.
     var cliValue: String? {
         switch self {
         case .default: return nil
@@ -90,13 +90,13 @@ extension Notification.Name {
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
-    static let defaultScreenshotSystemPrompt = "Analysiere diesen Screenshot: {path}"
-    static let defaultFileSystemPrompt = "Analysiere die angehängte Datei."
+    static let defaultScreenshotSystemPrompt = "Analyze this screenshot: {path}"
+    static let defaultFileSystemPrompt = "Analyze the attached file."
     static let defaultWebsiteSystemPrompt = """
-Analysiere diese Website:
+Analyze this website:
 URL: {url}
-Titel: {title}
-Inhalt:
+Title: {title}
+Content:
 {content}
 """
 

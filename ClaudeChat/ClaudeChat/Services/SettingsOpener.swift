@@ -5,7 +5,7 @@ enum SettingsBridge {
     static let windowID = "settings-bridge"
 }
 
-/// Hält `openSettings` aus der SwiftUI-App-Lifecycle, damit AppKit (Statusmenü) Einstellungen korrekt öffnen kann.
+/// Keeps `openSettings` from the SwiftUI app lifecycle so AppKit (status menu) can open settings correctly.
 @MainActor
 enum SettingsOpener {
     private static var openAction: OpenSettingsAction?
@@ -47,7 +47,7 @@ enum SettingsOpener {
     }
 }
 
-/// Registriert `openSettings` in einem versteckten Fenster (muss vor der Settings-Scene deklariert sein).
+/// Registers `openSettings` in a hidden window (must be declared before the Settings scene).
 struct SettingsRegistrationView: View {
     @Environment(\.openSettings) private var openSettings
 
@@ -61,8 +61,8 @@ struct SettingsRegistrationView: View {
     }
 }
 
-/// Hält das Bridge-Fenster in der SwiftUI-Scene, blendet es aber unsichtbar aus.
-/// `orderOut` oder `dismissWindow` würden das letzte Fenster entfernen und die App beenden.
+/// Keeps the bridge window in the SwiftUI scene but hides it.
+/// `orderOut` or `dismissWindow` would remove the last window and quit the app.
 private struct BridgeWindowConcealer: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)

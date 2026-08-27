@@ -63,7 +63,7 @@ final class ChatViewModel: ObservableObject {
             if let attachment {
                 resolvedDisplay = (attachment as NSString).lastPathComponent
             } else {
-                resolvedDisplay = "Anhang"
+                resolvedDisplay = "Attachment"
             }
         } else {
             resolvedDisplay = text
@@ -76,8 +76,8 @@ final class ChatViewModel: ObservableObject {
         )
         conversation.messages.append(userMessage)
 
-        if conversation.title == "Neue Konversation" {
-            let titleSource = resolvedDisplay.isEmpty ? (attachment.map { ($0 as NSString).lastPathComponent } ?? "Anhang") : resolvedDisplay
+        if conversation.title == "New Conversation" || conversation.title == "Neue Konversation" {
+            let titleSource = resolvedDisplay.isEmpty ? (attachment.map { ($0 as NSString).lastPathComponent } ?? "Attachment") : resolvedDisplay
             conversation.title = String(titleSource.prefix(40))
         }
 
@@ -191,7 +191,7 @@ final class ChatViewModel: ObservableObject {
                     paths: cachedPaths
                 )
                 if !cachedPaths.allSatisfy({ cliPrompt.contains($0) }) {
-                    cliPrompt += "\n\nAngehängte Dateien:\n\(cachedPaths.joined(separator: "\n"))"
+                    cliPrompt += "\n\nAttached files:\n\(cachedPaths.joined(separator: "\n"))"
                 }
                 await sendMessage(
                     featureSource: .file,
@@ -226,7 +226,7 @@ final class ChatViewModel: ObservableObject {
     }
 
     private func prepareConversationTitle(for pageTitle: String) {
-        if conversation.title == "Neue Konversation" {
+        if conversation.title == "New Conversation" || conversation.title == "Neue Konversation" {
             let titleSource = pageTitle.isEmpty ? "Website" : pageTitle
             conversation.title = String(titleSource.prefix(40))
             try? store.save(conversation)
@@ -280,7 +280,7 @@ struct ChatView: View {
 
     private var conversationSidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Konversationen")
+            Text("Conversations")
                 .font(.headline)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
@@ -312,7 +312,7 @@ struct ChatView: View {
                 Image(systemName: showsConversationList ? "sidebar.left" : "sidebar.right")
             }
             .buttonStyle(.borderless)
-            .help("Konversationen anzeigen")
+            .help("Show conversations")
 
             Text(viewModel.conversation.title)
                 .font(.headline)
@@ -332,7 +332,7 @@ struct ChatView: View {
                 Image(systemName: "plus.message")
             }
             .buttonStyle(.borderless)
-            .help("Neue Konversation")
+            .help("New conversation")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -343,7 +343,7 @@ struct ChatView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     if viewModel.conversation.messages.isEmpty {
-                        Text("Stelle Claude eine Frage …")
+                        Text("Ask Claude a question…")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.top, 40)
@@ -388,7 +388,7 @@ struct ChatView: View {
                     .frame(height: inputHeight)
 
                     if viewModel.inputText.isEmpty {
-                        Text("Nachricht …")
+                        Text("Message…")
                             .foregroundStyle(.tertiary)
                             .padding(.leading, 4)
                             .padding(.top, 6)
@@ -433,7 +433,7 @@ struct ChatView: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
-            .help("Anhang entfernen")
+            .help("Remove attachment")
         }
         .padding(8)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))

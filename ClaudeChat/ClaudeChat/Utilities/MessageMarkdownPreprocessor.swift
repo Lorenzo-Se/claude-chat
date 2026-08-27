@@ -1,7 +1,7 @@
 import Foundation
 
 enum MessageMarkdownPreprocessor {
-    /// Markdown-Absätze brauchen `\n\n`. Einzelne `\n` werden sichtbar als Absatzgrenzen erweitert (außer in Code-Blöcken).
+    /// Markdown paragraphs need `\n\n`. Single `\n` are expanded into visible paragraph breaks (except inside code blocks).
     static func prepareForDisplay(_ content: String) -> String {
         guard content.contains("```") else {
             return expandSingleNewlines(content)

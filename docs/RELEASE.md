@@ -1,14 +1,14 @@
 # Claude Chat — Release & Distribution
 
-## Release-Build
+## Release build
 
-Universal Binary (arm64 + x86_64), optimiert für Größe:
+Universal binary (arm64 + x86_64), optimized for size:
 
 - `DEAD_CODE_STRIPPING = YES`
 - `SWIFT_COMPILATION_MODE = wholemodule`
 - `SWIFT_OPTIMIZATION_LEVEL = -O`
 - `COPY_PHASE_STRIP` / `STRIP_INSTALLED_PRODUCT`
-- `DEBUG_INFORMATION_FORMAT = dwarf` (keine dSYM im Standard-Release — kleinere Artefakte; für Crash-Analyse optional `dwarf-with-dsym` setzen)
+- `DEBUG_INFORMATION_FORMAT = dwarf` (no dSYM in the default release — smaller artifacts; set `dwarf-with-dsym` optionally for crash analysis)
 
 ```bash
 chmod +x scripts/build-release.sh scripts/create-dmg.sh
@@ -16,22 +16,22 @@ chmod +x scripts/build-release.sh scripts/create-dmg.sh
 ./scripts/create-dmg.sh
 ```
 
-Ergebnis:
+Output:
 
 - App: `build/Release/ClaudeChat.app`
 - DMG: `build/Release/ClaudeChat-0.1.0.dmg`
 
-## Code Signing (Developer ID)
+## Code signing (Developer ID)
 
-Manuell oder per Umgebungsvariablen beim Build:
+Manually or via environment variables during build:
 
 ```bash
 export DEVELOPMENT_TEAM="XXXXXXXXXX"
-export CODE_SIGN_IDENTITY="Developer ID Application: Ihr Name (TEAMID)"
+export CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
 ./scripts/build-release.sh
 ```
 
-Vollständige Signatur inkl. Native Host und eingebetteter Binaries:
+Full signature including native host and embedded binaries:
 
 ```bash
 APP=build/Release/ClaudeChat.app
@@ -42,19 +42,19 @@ codesign --force --options runtime --deep --sign "$CODE_SIGN_IDENTITY" \
 codesign --verify --deep --strict --verbose=2 "$APP"
 ```
 
-## Notarisierung (manuell — Credentials erforderlich)
+## Notarization (manual — credentials required)
 
-Apple Developer Account, App-spezifisches Passwort oder API-Key nötig. Nicht voll automatisierbar ohne gespeicherte Secrets.
+Apple Developer account, app-specific password, or API key required. Cannot be fully automated without stored secrets.
 
 ```bash
 DMG=build/Release/ClaudeChat-0.1.0.dmg
 
-# DMG signieren
+# Sign DMG
 codesign --force --sign "$CODE_SIGN_IDENTITY" "$DMG"
 
-# Einreichen
+# Submit
 xcrun notarytool submit "$DMG" \
-  --apple-id "ihre@email.de" \
+  --apple-id "you@email.com" \
   --team-id "TEAMID" \
   --password "@keychain:AC_PASSWORD" \
   --wait
@@ -64,7 +64,7 @@ xcrun stapler staple "$DMG"
 xcrun stapler validate "$DMG"
 ```
 
-Alternativ mit App Store Connect API-Key:
+Alternatively with App Store Connect API key:
 
 ```bash
 xcrun notarytool submit "$DMG" \
@@ -76,10 +76,10 @@ xcrun notarytool submit "$DMG" \
 
 ## Hardened Runtime
 
-- `ENABLE_HARDENED_RUNTIME = YES` im Xcode-Target
-- Kein App Sandbox (Subprozesse + Native Messaging)
-- Verteilung nur notarisiert außerhalb des Mac App Store
+- `ENABLE_HARDENED_RUNTIME = YES` in the Xcode target
+- No App Sandbox (subprocesses + Native Messaging)
+- Distribution only notarized outside the Mac App Store
 
-## Einstellungen in der App
+## In-app settings
 
-Menüleisten-Icon → Rechtsklick → **Einstellungen…** (oder ⌘, im Kontextmenü).
+Menu bar icon → right-click → **Settings…** (or ⌘, from the context menu).

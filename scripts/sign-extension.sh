@@ -22,21 +22,21 @@ XPI_PATH="$OUTPUT_DIR/$XPI_NAME"
 
 if [[ -z "$API_KEY" || -z "$API_SECRET" ]]; then
   cat >&2 <<'EOF'
-Fehler: Mozilla AMO API-Zugangsdaten fehlen.
+Error: Mozilla AMO API credentials are missing.
 
-1. Konto anlegen: https://addons.mozilla.org/developers/
-2. API-Zugangsdaten erstellen (JWT issuer + secret)
-3. Datei anlegen: scripts/amo-credentials.env
+1. Create an account: https://addons.mozilla.org/developers/
+2. Create API credentials (JWT issuer + secret)
+3. Create file: scripts/amo-credentials.env
 
    WEB_EXT_API_KEY=<issuer>
    WEB_EXT_API_SECRET=<secret>
 
-Oder Umgebungsvariablen setzen und erneut ausführen.
+Or set environment variables and run again.
 EOF
   exit 1
 fi
 
-echo "==> Extension signieren (Mozilla AMO, unlisted)"
+echo "==> Signing extension (Mozilla AMO, unlisted)"
 rm -rf "$ARTIFACTS_DIR"
 mkdir -p "$ARTIFACTS_DIR" "$OUTPUT_DIR"
 
@@ -49,9 +49,9 @@ npx --yes web-ext@8 sign \
 
 SIGNED_XPI="$(find "$ARTIFACTS_DIR" -name '*.xpi' -type f | head -1)"
 if [[ -z "$SIGNED_XPI" || ! -f "$SIGNED_XPI" ]]; then
-  echo "Fehler: Keine signierte XPI in $ARTIFACTS_DIR gefunden" >&2
+  echo "Error: No signed XPI found in $ARTIFACTS_DIR" >&2
   exit 1
 fi
 
 cp "$SIGNED_XPI" "$XPI_PATH"
-echo "==> Signierte XPI: $XPI_PATH"
+echo "==> Signed XPI: $XPI_PATH"

@@ -8,7 +8,7 @@ CONFIG="Release"
 DERIVED="${DERIVED_DATA_PATH:-$ROOT/build/DerivedData}"
 OUTPUT="${OUTPUT_DIR:-$ROOT/build/Release}"
 
-echo "==> Release-Build (Universal Binary)"
+echo "==> Release build (universal binary)"
 xcodebuild \
   -project "$PROJECT" \
   -scheme "$SCHEME" \
@@ -22,7 +22,7 @@ xcodebuild \
 
 APP_PATH="$DERIVED/Build/Products/$CONFIG/ClaudeChat.app"
 if [[ ! -d "$APP_PATH" ]]; then
-  echo "Fehler: $APP_PATH nicht gefunden" >&2
+  echo "Error: $APP_PATH not found" >&2
   exit 1
 fi
 
@@ -30,5 +30,5 @@ mkdir -p "$OUTPUT"
 rm -rf "$OUTPUT/ClaudeChat.app"
 ditto "$APP_PATH" "$OUTPUT/ClaudeChat.app"
 
-echo "==> Fertig: $OUTPUT/ClaudeChat.app"
+echo "==> Done: $OUTPUT/ClaudeChat.app"
 file "$OUTPUT/ClaudeChat.app/Contents/MacOS/ClaudeChat" || true

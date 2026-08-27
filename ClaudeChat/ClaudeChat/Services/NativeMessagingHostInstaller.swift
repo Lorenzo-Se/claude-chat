@@ -8,11 +8,11 @@ enum NativeMessagingHostInstallerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .bundledHostMissing:
-            return "Native-Messaging-Host wurde im App-Bundle nicht gefunden."
+            return "Native Messaging host was not found in the app bundle."
         case .copyFailed:
-            return "Native-Messaging-Host konnte nicht installiert werden."
+            return "Native Messaging host could not be installed."
         case .manifestWriteFailed:
-            return "Native-Messaging-Manifest konnte nicht registriert werden."
+            return "Native Messaging manifest could not be registered."
         }
     }
 }
@@ -20,12 +20,12 @@ enum NativeMessagingHostInstallerError: LocalizedError {
 enum NativeMessagingHostInstaller {
     private static let fileManager = FileManager.default
 
-    /// Installiert Host-Binary und Manifeste beim App-Start (idempotent).
+    /// Installs host binary and manifests on app launch (idempotent).
     static func installIfNeeded() {
         do {
             try install()
         } catch {
-            NSLog("Native-Messaging-Host-Installation fehlgeschlagen: \(error.localizedDescription)")
+            NSLog("Native Messaging host installation failed: \(error.localizedDescription)")
         }
     }
 
