@@ -4,6 +4,7 @@ import Foundation
 enum FeatureSendSource {
   case screenshot
   case website
+  case file
 }
 
 struct PostSendActions {

@@ -8,6 +8,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
     case fullscreenCapture
     case regionCapture
     case websiteExtract
+    case sendActiveFile
     case newConversation
 
     var id: String { rawValue }
@@ -18,6 +19,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .fullscreenCapture: return "Vollbild-Screenshot"
         case .regionCapture: return "Bereichs-Screenshot"
         case .websiteExtract: return "Website extrahieren"
+        case .sendActiveFile: return "Datei senden"
         case .newConversation: return "Neue Konversation"
         }
     }
@@ -32,6 +34,8 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
             return KeyCombo(key: .d, modifiers: [.option, .shift])
         case .websiteExtract:
             return KeyCombo(key: .w, modifiers: [.option, .shift])
+        case .sendActiveFile:
+            return KeyCombo(key: .f, modifiers: [.option, .shift])
         case .newConversation:
             return KeyCombo(key: .n, modifiers: [.option, .shift])
         }
@@ -87,6 +91,7 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     static let defaultScreenshotSystemPrompt = "Analysiere diesen Screenshot: {path}"
+    static let defaultFileSystemPrompt = "Analysiere die angehängte Datei."
     static let defaultWebsiteSystemPrompt = """
 Analysiere diese Website:
 URL: {url}
@@ -112,6 +117,11 @@ Inhalt:
         static let websiteOpenChatAfterSend = "websiteOpenChatAfterSend"
         static let websiteCopyToClipboardAfterSend = "websiteCopyToClipboardAfterSend"
         static let websitePlayAudioAfterSend = "websitePlayAudioAfterSend"
+        static let fileSystemPromptEnabled = "fileSystemPromptEnabled"
+        static let fileSystemPrompt = "fileSystemPrompt"
+        static let fileOpenChatAfterSend = "fileOpenChatAfterSend"
+        static let fileCopyToClipboardAfterSend = "fileCopyToClipboardAfterSend"
+        static let filePlayAudioAfterSend = "filePlayAudioAfterSend"
     }
 
     @Published private(set) var hotkeys: [HotkeyAction: KeyCombo]
@@ -207,6 +217,36 @@ Inhalt:
             notifyChange()
         }
     }
+    @Published var fileSystemPromptEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(fileSystemPromptEnabled, forKey: Keys.fileSystemPromptEnabled)
+            notifyChange()
+        }
+    }
+    @Published var fileSystemPrompt: String {
+        didSet {
+            UserDefaults.standard.set(fileSystemPrompt, forKey: Keys.fileSystemPrompt)
+            notifyChange()
+        }
+    }
+    @Published var fileOpenChatAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(fileOpenChatAfterSend, forKey: Keys.fileOpenChatAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var fileCopyToClipboardAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(fileCopyToClipboardAfterSend, forKey: Keys.fileCopyToClipboardAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var filePlayAudioAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(filePlayAudioAfterSend, forKey: Keys.filePlayAudioAfterSend)
+            notifyChange()
+        }
+    }
 
     private init() {
         var loadedHotkeys: [HotkeyAction: KeyCombo] = [:]
@@ -287,6 +327,28 @@ Inhalt:
             forKey: Keys.websitePlayAudioAfterSend,
             defaultValue: false
         )
+
+        if UserDefaults.standard.object(forKey: Keys.fileSystemPromptEnabled) != nil {
+            fileSystemPromptEnabled = UserDefaults.standard.bool(forKey: Keys.fileSystemPromptEnabled)
+        } else {
+            fileSystemPromptEnabled = true
+        }
+
+        fileSystemPrompt = UserDefaults.standard.string(forKey: Keys.fileSystemPrompt)
+            ?? Self.defaultFileSystemPrompt
+
+        fileOpenChatAfterSend = Self.boolSetting(
+            forKey: Keys.fileOpenChatAfterSend,
+            defaultValue: true
+        )
+        fileCopyToClipboardAfterSend = Self.boolSetting(
+            forKey: Keys.fileCopyToClipboardAfterSend,
+            defaultValue: false
+        )
+        filePlayAudioAfterSend = Self.boolSetting(
+            forKey: Keys.filePlayAudioAfterSend,
+            defaultValue: false
+        )
     }
 
     func postSendActions(for feature: FeatureSendSource) -> PostSendActions {
@@ -302,6 +364,12 @@ Inhalt:
                 openChat: websiteOpenChatAfterSend,
                 copyToClipboard: websiteCopyToClipboardAfterSend,
                 playAudio: websitePlayAudioAfterSend
+            )
+        case .file:
+            return PostSendActions(
+                openChat: fileOpenChatAfterSend,
+                copyToClipboard: fileCopyToClipboardAfterSend,
+                playAudio: filePlayAudioAfterSend
             )
         }
     }

@@ -225,9 +225,46 @@ struct SettingsView: View {
                 Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.websiteCopyToClipboardAfterSend)
                 Toggle("Antwort als Audio wiedergeben", isOn: $settings.websitePlayAudioAfterSend)
             }
+
+            Section("Datei") {
+                Toggle("System-Prompt verwenden", isOn: $settings.fileSystemPromptEnabled)
+
+                if settings.fileSystemPromptEnabled {
+                    TextEditor(text: $settings.fileSystemPrompt)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 72)
+
+                    Text("Platzhalter: {paths}, {path}, {filename}, {userText}")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Dateipfade werden ins Eingabefeld gelegt — manuell senden.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                Text("Nach dem Senden")
+                    .font(.subheadline)
+
+                Toggle("Chat-Fenster öffnen nach Senden", isOn: $settings.fileOpenChatAfterSend)
+                Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.fileCopyToClipboardAfterSend)
+                Toggle("Antwort als Audio wiedergeben", isOn: $settings.filePlayAudioAfterSend)
+
+                Divider()
+
+                Text("Claude Chat muss Finder und Vorschau steuern können. Beim ersten Mal erscheint ein macOS-Dialog — danach ist die App unter Automation sichtbar.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Button("Automation-Berechtigungen anfordern") {
+                    AutomationPermissionManager.requestPermissionsFromSettings()
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 820)
+        .frame(width: 520, height: 900)
         .padding()
         .onAppear {
             draftCLIPath = settings.cliPathOverride

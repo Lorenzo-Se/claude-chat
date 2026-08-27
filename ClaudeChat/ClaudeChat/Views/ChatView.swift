@@ -30,7 +30,7 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
-    func attachScreenshot(path: String) {
+    func attachFile(path: String) {
         pendingAttachmentPath = path
         errorMessage = nil
     }
@@ -39,10 +39,15 @@ final class ChatViewModel: ObservableObject {
         pendingAttachmentPath = nil
     }
 
-    func sendMessage(featureSource: FeatureSendSource? = nil) async {
+    func sendMessage(
+        featureSource: FeatureSendSource? = nil,
+        cliPrompt: String? = nil,
+        displayContent: String? = nil
+    ) async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         let attachment = pendingAttachmentPath
-        guard !text.isEmpty || attachment != nil, !isLoading else { return }
+        let effectivePrompt = cliPrompt ?? text
+        guard !effectivePrompt.isEmpty || attachment != nil, !isLoading else { return }
 
         let activeFeatureSource = featureSource ?? pendingFeatureSource
         pendingFeatureSource = nil
@@ -51,16 +56,28 @@ final class ChatViewModel: ObservableObject {
         pendingAttachmentPath = nil
         errorMessage = nil
 
-        let displayContent = text.isEmpty ? "Screenshot" : text
+        let resolvedDisplay: String
+        if let displayContent {
+            resolvedDisplay = displayContent
+        } else if text.isEmpty {
+            if let attachment {
+                resolvedDisplay = (attachment as NSString).lastPathComponent
+            } else {
+                resolvedDisplay = "Anhang"
+            }
+        } else {
+            resolvedDisplay = text
+        }
+
         let userMessage = Message(
             role: .user,
-            content: displayContent,
+            content: resolvedDisplay,
             attachmentPath: attachment
         )
         conversation.messages.append(userMessage)
 
         if conversation.title == "Neue Konversation" {
-            let titleSource = text.isEmpty ? "Screenshot" : text
+            let titleSource = resolvedDisplay.isEmpty ? (attachment.map { ($0 as NSString).lastPathComponent } ?? "Anhang") : resolvedDisplay
             conversation.title = String(titleSource.prefix(40))
         }
 
@@ -79,7 +96,7 @@ final class ChatViewModel: ObservableObject {
 
         do {
             let response = try await processManager.send(
-                prompt: text,
+                prompt: effectivePrompt,
                 conversationId: conversation.id,
                 sessionId: conversation.claudeSessionId,
                 attachmentPath: attachment,
@@ -136,19 +153,56 @@ final class ChatViewModel: ObservableObject {
     }
 
     func sendScreenshot(path: String) async {
-        attachScreenshot(path: path)
+        attachFile(path: path)
         errorMessage = nil
         pendingFeatureSource = .screenshot
 
         if settings.screenshotSystemPromptEnabled {
-            let prompt = WebsiteContentService.applyScreenshotTemplate(
+            let cliPrompt = WebsiteContentService.applyScreenshotTemplate(
                 settings.screenshotSystemPrompt,
                 path: path
             )
-            inputText = prompt
-            await sendMessage(featureSource: .screenshot)
+            await sendMessage(
+                featureSource: .screenshot,
+                cliPrompt: cliPrompt,
+                displayContent: (path as NSString).lastPathComponent
+            )
         } else {
             inputText = ""
+        }
+    }
+
+    func sendFiles(paths: [String]) async {
+        guard !paths.isEmpty else { return }
+
+        do {
+            let cachedPaths = try paths.map { try AttachmentStore.shared.importFile(from: $0) }
+            let primaryPath = cachedPaths[0]
+            attachFile(path: primaryPath)
+            pendingFeatureSource = .file
+            errorMessage = nil
+
+            let displayNames = cachedPaths.map { ($0 as NSString).lastPathComponent }
+            let displayContent = displayNames.joined(separator: ", ")
+
+            if settings.fileSystemPromptEnabled {
+                var cliPrompt = FileContextService.applyFileTemplate(
+                    settings.fileSystemPrompt,
+                    paths: cachedPaths
+                )
+                if !cachedPaths.allSatisfy({ cliPrompt.contains($0) }) {
+                    cliPrompt += "\n\nAngehängte Dateien:\n\(cachedPaths.joined(separator: "\n"))"
+                }
+                await sendMessage(
+                    featureSource: .file,
+                    cliPrompt: cliPrompt,
+                    displayContent: displayContent
+                )
+            } else {
+                inputText = displayContent
+            }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 
@@ -368,20 +422,7 @@ struct ChatView: View {
 
     private func attachmentPreview(path: String) -> some View {
         HStack(spacing: 8) {
-            if let image = NSImage(contentsOfFile: path) {
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else {
-                Image(systemName: "photo")
-                    .foregroundStyle(.secondary)
-            }
-
-            Text("Screenshot angehängt")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            AttachmentChipView(path: path, maxImageHeight: 80)
 
             Spacer()
 

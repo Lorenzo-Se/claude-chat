@@ -36,6 +36,10 @@
 		A10000010000000000000027 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000028 /* SpeechService.swift */; };
 		A10000010000000000000028 /* SettingsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000029 /* SettingsOpener.swift */; };
 		A10000010000000000000030 /* MessageMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* MessageMarkdownPreprocessor.swift */; };
+		A10000010000000000000031 /* FileContextService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* FileContextService.swift */; };
+		A10000010000000000000032 /* AutomationPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* AutomationPermissionManager.swift */; };
+		A10000010000000000000033 /* AttachmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000034 /* AttachmentStore.swift */; };
+		A10000010000000000000034 /* AttachmentChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000035 /* AttachmentChipView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +73,11 @@
 		A20000010000000000000028 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		A20000010000000000000029 /* SettingsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsOpener.swift; sourceTree = "<group>"; };
 		A20000010000000000000030 /* MessageMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageMarkdownPreprocessor.swift; sourceTree = "<group>"; };
+		A20000010000000000000031 /* FileContextService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileContextService.swift; sourceTree = "<group>"; };
+		A20000010000000000000032 /* AutomationPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationPermissionManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000033 /* ClaudeChat.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClaudeChat.entitlements; sourceTree = "<group>"; };
+		A20000010000000000000034 /* AttachmentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentStore.swift; sourceTree = "<group>"; };
+		A20000010000000000000035 /* AttachmentChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentChipView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +111,7 @@
 				A40000010000000000000007 /* Windows */,
 				A40000010000000000000009 /* Utilities */,
 				A20000010000000000000011 /* Info.plist */,
+				A20000010000000000000033 /* ClaudeChat.entitlements */,
 			);
 			path = ClaudeChat;
 			sourceTree = "<group>";
@@ -152,6 +162,9 @@
 				A20000010000000000000027 /* PostSendActionHandler.swift */,
 				A20000010000000000000028 /* SpeechService.swift */,
 				A20000010000000000000029 /* SettingsOpener.swift */,
+				A20000010000000000000031 /* FileContextService.swift */,
+				A20000010000000000000032 /* AutomationPermissionManager.swift */,
+				A20000010000000000000034 /* AttachmentStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -162,6 +175,7 @@
 				A20000010000000000000009 /* MessageBubbleView.swift */,
 				A20000010000000000000010 /* ChatView.swift */,
 				A20000010000000000000026 /* SettingsView.swift */,
+				A20000010000000000000035 /* AttachmentChipView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -326,6 +340,10 @@
 				A10000010000000000000027 /* SpeechService.swift in Sources */,
 				A10000010000000000000028 /* SettingsOpener.swift in Sources */,
 				A10000010000000000000030 /* MessageMarkdownPreprocessor.swift in Sources */,
+				A10000010000000000000031 /* FileContextService.swift in Sources */,
+				A10000010000000000000032 /* AutomationPermissionManager.swift in Sources */,
+				A10000010000000000000033 /* AttachmentStore.swift in Sources */,
+				A10000010000000000000034 /* AttachmentChipView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -390,6 +408,7 @@
 		AB0000010000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ClaudeChat/ClaudeChat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -441,6 +460,7 @@
 		AB0000010000000000000005 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ClaudeChat/ClaudeChat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;

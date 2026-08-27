@@ -124,9 +124,9 @@ final class ClaudeProcessManager: ObservableObject {
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "Analysiere diesen Screenshot: \(attachmentPath)"
+            return "Analysiere diese Datei: \(attachmentPath)"
         }
-        return "\(trimmed)\n\nScreenshot: \(attachmentPath)"
+        return "\(trimmed)\n\nDatei: \(attachmentPath)"
     }
 
     private func runProcess(

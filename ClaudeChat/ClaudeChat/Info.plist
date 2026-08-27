@@ -26,5 +26,7 @@
 	<string>Copyright © 2026</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Claude Chat benötigt Zugriff auf Finder und Vorschau, um markierte oder geöffnete Dateien an die KI zu senden.</string>
 </dict>
 </plist>

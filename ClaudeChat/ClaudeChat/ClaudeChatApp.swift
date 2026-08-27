@@ -45,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         ScreenshotStore.shared.cleanupOldScreenshots()
+        AttachmentStore.shared.cleanupOldAttachments()
         NativeMessagingHostInstaller.installIfNeeded()
         settings.syncLaunchAtLoginFromSystem()
 
@@ -165,6 +166,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onWebsiteExtract: { [weak self] in
                 Task { await self?.handleWebsiteExtract() }
             },
+            onSendActiveFile: { [weak self] in
+                Task { await self?.handleSendActiveFile() }
+            },
             onNewConversation: { [weak self] in
                 self?.handleNewConversation()
             }
@@ -214,6 +218,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func handleSendActiveFile() async {
+        do {
+            let paths = try await FileContextService.resolveActiveFilePaths()
+            if shouldShowPanelOnFeatureTrigger(systemPromptEnabled: settings.fileSystemPromptEnabled) {
+                panelController?.show()
+            }
+            await chatViewModel?.sendFiles(paths: paths)
+        } catch {
+            showFileSendError(error)
+        }
+    }
+
     /// Panel beim Auslösen nur öffnen, wenn der Nutzer Inhalt vor dem Senden bearbeiten muss.
     private func shouldShowPanelOnFeatureTrigger(systemPromptEnabled: Bool) -> Bool {
         !systemPromptEnabled
@@ -231,6 +247,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showWebsiteExtractError(_ error: Error) {
         let alert = NSAlert()
         alert.messageText = "Website-Extraktion fehlgeschlagen"
+        alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func showFileSendError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "Datei senden fehlgeschlagen"
         alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
