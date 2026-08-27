@@ -138,9 +138,96 @@ struct SettingsView: View {
                         .foregroundStyle(.red)
                 }
             }
+
+            Section("Screenshot") {
+                Toggle("System-Prompt verwenden", isOn: $settings.screenshotSystemPromptEnabled)
+
+                if settings.screenshotSystemPromptEnabled {
+                    TextEditor(text: $settings.screenshotSystemPrompt)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 72)
+
+                    Text("Platzhalter: {path} (Screenshot-Pfad), {userText}")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Screenshot wird angehängt; Textfeld bleibt leer — manuell senden.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                Text("Nach dem Senden")
+                    .font(.subheadline)
+
+                Toggle("Chat-Fenster öffnen nach Senden", isOn: $settings.screenshotOpenChatAfterSend)
+                Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.screenshotCopyToClipboardAfterSend)
+                Toggle("Antwort als Audio wiedergeben", isOn: $settings.screenshotPlayAudioAfterSend)
+            }
+
+            Section("Website") {
+                Toggle("System-Prompt verwenden", isOn: $settings.websiteSystemPromptEnabled)
+
+                if settings.websiteSystemPromptEnabled {
+                    Text("Standard-System-Prompt")
+                        .font(.subheadline)
+
+                    TextEditor(text: $settings.websiteSystemPrompt)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 72)
+
+                    Text("Platzhalter: {url}, {title}, {content}")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Divider()
+
+                    Text("URL-Regeln (überschreiben Standard-Prompt)")
+                        .font(.subheadline)
+
+                    ForEach($settings.websiteURLPromptOverrides) { $override in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                TextField("Muster (z. B. github.com)", text: $override.pattern)
+                                    .textFieldStyle(.roundedBorder)
+
+                                Button {
+                                    settings.removeWebsiteURLPromptOverride(id: override.id)
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Regel löschen")
+                            }
+
+                            TextEditor(text: $override.prompt)
+                                .font(.system(.body, design: .monospaced))
+                                .frame(minHeight: 56)
+                        }
+                    }
+
+                    Button("URL-Regel hinzufügen") {
+                        settings.addWebsiteURLPromptOverride()
+                    }
+                } else {
+                    Text("Extrahierter Inhalt (URL, Titel, Text) wird ins Eingabefeld gelegt — manuell senden.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                Text("Nach dem Senden")
+                    .font(.subheadline)
+
+                Toggle("Chat-Fenster öffnen nach Senden", isOn: $settings.websiteOpenChatAfterSend)
+                Toggle("Antwort in Zwischenablage kopieren", isOn: $settings.websiteCopyToClipboardAfterSend)
+                Toggle("Antwort als Audio wiedergeben", isOn: $settings.websitePlayAudioAfterSend)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 560)
+        .frame(width: 520, height: 820)
         .padding()
         .onAppear {
             draftCLIPath = settings.cliPathOverride

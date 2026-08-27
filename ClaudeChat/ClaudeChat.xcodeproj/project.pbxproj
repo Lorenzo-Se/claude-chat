@@ -32,6 +32,10 @@
 		A10000010000000000000023 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000024 /* AppSettings.swift */; };
 		A10000010000000000000024 /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000025 /* LaunchAtLoginManager.swift */; };
 		A10000010000000000000025 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000026 /* SettingsView.swift */; };
+		A10000010000000000000026 /* PostSendActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000027 /* PostSendActionHandler.swift */; };
+		A10000010000000000000027 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000028 /* SpeechService.swift */; };
+		A10000010000000000000028 /* SettingsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000029 /* SettingsOpener.swift */; };
+		A10000010000000000000030 /* MessageMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* MessageMarkdownPreprocessor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +65,10 @@
 		A20000010000000000000024 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A20000010000000000000025 /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000026 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A20000010000000000000027 /* PostSendActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostSendActionHandler.swift; sourceTree = "<group>"; };
+		A20000010000000000000028 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+		A20000010000000000000029 /* SettingsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsOpener.swift; sourceTree = "<group>"; };
+		A20000010000000000000030 /* MessageMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,6 +100,7 @@
 				A40000010000000000000005 /* Services */,
 				A40000010000000000000006 /* Views */,
 				A40000010000000000000007 /* Windows */,
+				A40000010000000000000009 /* Utilities */,
 				A20000010000000000000011 /* Info.plist */,
 			);
 			path = ClaudeChat;
@@ -140,6 +149,9 @@
 				A20000010000000000000022 /* WebsiteContentService.swift */,
 				A20000010000000000000024 /* AppSettings.swift */,
 				A20000010000000000000025 /* LaunchAtLoginManager.swift */,
+				A20000010000000000000027 /* PostSendActionHandler.swift */,
+				A20000010000000000000028 /* SpeechService.swift */,
+				A20000010000000000000029 /* SettingsOpener.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -161,6 +173,14 @@
 				A20000010000000000000016 /* RegionSelectionOverlay.swift */,
 			);
 			path = Windows;
+			sourceTree = "<group>";
+		};
+		A40000010000000000000009 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000030 /* MessageMarkdownPreprocessor.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -302,6 +322,10 @@
 				A10000010000000000000023 /* AppSettings.swift in Sources */,
 				A10000010000000000000024 /* LaunchAtLoginManager.swift in Sources */,
 				A10000010000000000000025 /* SettingsView.swift in Sources */,
+				A10000010000000000000026 /* PostSendActionHandler.swift in Sources */,
+				A10000010000000000000027 /* SpeechService.swift in Sources */,
+				A10000010000000000000028 /* SettingsOpener.swift in Sources */,
+				A10000010000000000000030 /* MessageMarkdownPreprocessor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -66,6 +66,18 @@ enum ClaudeModelChoice: String, CaseIterable, Identifiable {
     }
 }
 
+struct WebsiteURLPromptOverride: Codable, Identifiable, Equatable {
+    var id: UUID
+    var pattern: String
+    var prompt: String
+
+    init(id: UUID = UUID(), pattern: String = "", prompt: String = "") {
+        self.id = id
+        self.pattern = pattern
+        self.prompt = prompt
+    }
+}
+
 extension Notification.Name {
     static let appSettingsDidChange = Notification.Name("appSettingsDidChange")
 }
@@ -74,12 +86,32 @@ extension Notification.Name {
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
+    static let defaultScreenshotSystemPrompt = "Analysiere diesen Screenshot: {path}"
+    static let defaultWebsiteSystemPrompt = """
+Analysiere diese Website:
+URL: {url}
+Titel: {title}
+Inhalt:
+{content}
+"""
+
     private enum Keys {
         static let hotkeyPrefix = "hotkey."
         static let cliPathOverride = "claudeCLIPathOverride"
         static let model = "claudeModel"
         static let streamingEnabled = "streamingEnabled"
         static let launchAtLogin = "launchAtLogin"
+        static let screenshotSystemPromptEnabled = "screenshotSystemPromptEnabled"
+        static let screenshotSystemPrompt = "screenshotSystemPrompt"
+        static let websiteSystemPromptEnabled = "websiteSystemPromptEnabled"
+        static let websiteSystemPrompt = "websiteSystemPrompt"
+        static let websiteURLPromptOverrides = "websiteURLPromptOverrides"
+        static let screenshotOpenChatAfterSend = "screenshotOpenChatAfterSend"
+        static let screenshotCopyToClipboardAfterSend = "screenshotCopyToClipboardAfterSend"
+        static let screenshotPlayAudioAfterSend = "screenshotPlayAudioAfterSend"
+        static let websiteOpenChatAfterSend = "websiteOpenChatAfterSend"
+        static let websiteCopyToClipboardAfterSend = "websiteCopyToClipboardAfterSend"
+        static let websitePlayAudioAfterSend = "websitePlayAudioAfterSend"
     }
 
     @Published private(set) var hotkeys: [HotkeyAction: KeyCombo]
@@ -106,6 +138,72 @@ final class AppSettings: ObservableObject {
     @Published var launchAtLogin: Bool {
         didSet {
             UserDefaults.standard.set(launchAtLogin, forKey: Keys.launchAtLogin)
+            notifyChange()
+        }
+    }
+    @Published var screenshotSystemPromptEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(screenshotSystemPromptEnabled, forKey: Keys.screenshotSystemPromptEnabled)
+            notifyChange()
+        }
+    }
+    @Published var screenshotSystemPrompt: String {
+        didSet {
+            UserDefaults.standard.set(screenshotSystemPrompt, forKey: Keys.screenshotSystemPrompt)
+            notifyChange()
+        }
+    }
+    @Published var websiteSystemPromptEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(websiteSystemPromptEnabled, forKey: Keys.websiteSystemPromptEnabled)
+            notifyChange()
+        }
+    }
+    @Published var websiteSystemPrompt: String {
+        didSet {
+            UserDefaults.standard.set(websiteSystemPrompt, forKey: Keys.websiteSystemPrompt)
+            notifyChange()
+        }
+    }
+    @Published var websiteURLPromptOverrides: [WebsiteURLPromptOverride] {
+        didSet {
+            persistWebsiteURLPromptOverrides()
+            notifyChange()
+        }
+    }
+    @Published var screenshotOpenChatAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(screenshotOpenChatAfterSend, forKey: Keys.screenshotOpenChatAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var screenshotCopyToClipboardAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(screenshotCopyToClipboardAfterSend, forKey: Keys.screenshotCopyToClipboardAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var screenshotPlayAudioAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(screenshotPlayAudioAfterSend, forKey: Keys.screenshotPlayAudioAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var websiteOpenChatAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(websiteOpenChatAfterSend, forKey: Keys.websiteOpenChatAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var websiteCopyToClipboardAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(websiteCopyToClipboardAfterSend, forKey: Keys.websiteCopyToClipboardAfterSend)
+            notifyChange()
+        }
+    }
+    @Published var websitePlayAudioAfterSend: Bool {
+        didSet {
+            UserDefaults.standard.set(websitePlayAudioAfterSend, forKey: Keys.websitePlayAudioAfterSend)
             notifyChange()
         }
     }
@@ -139,6 +237,94 @@ final class AppSettings: ObservableObject {
         }
 
         launchAtLogin = UserDefaults.standard.bool(forKey: Keys.launchAtLogin)
+
+        if UserDefaults.standard.object(forKey: Keys.screenshotSystemPromptEnabled) != nil {
+            screenshotSystemPromptEnabled = UserDefaults.standard.bool(forKey: Keys.screenshotSystemPromptEnabled)
+        } else {
+            screenshotSystemPromptEnabled = true
+        }
+
+        screenshotSystemPrompt = UserDefaults.standard.string(forKey: Keys.screenshotSystemPrompt)
+            ?? Self.defaultScreenshotSystemPrompt
+
+        if UserDefaults.standard.object(forKey: Keys.websiteSystemPromptEnabled) != nil {
+            websiteSystemPromptEnabled = UserDefaults.standard.bool(forKey: Keys.websiteSystemPromptEnabled)
+        } else {
+            websiteSystemPromptEnabled = true
+        }
+
+        websiteSystemPrompt = UserDefaults.standard.string(forKey: Keys.websiteSystemPrompt)
+            ?? Self.defaultWebsiteSystemPrompt
+
+        if let data = UserDefaults.standard.data(forKey: Keys.websiteURLPromptOverrides),
+           let overrides = try? JSONDecoder().decode([WebsiteURLPromptOverride].self, from: data) {
+            websiteURLPromptOverrides = overrides
+        } else {
+            websiteURLPromptOverrides = []
+        }
+
+        screenshotOpenChatAfterSend = Self.boolSetting(
+            forKey: Keys.screenshotOpenChatAfterSend,
+            defaultValue: true
+        )
+        screenshotCopyToClipboardAfterSend = Self.boolSetting(
+            forKey: Keys.screenshotCopyToClipboardAfterSend,
+            defaultValue: false
+        )
+        screenshotPlayAudioAfterSend = Self.boolSetting(
+            forKey: Keys.screenshotPlayAudioAfterSend,
+            defaultValue: false
+        )
+        websiteOpenChatAfterSend = Self.boolSetting(
+            forKey: Keys.websiteOpenChatAfterSend,
+            defaultValue: true
+        )
+        websiteCopyToClipboardAfterSend = Self.boolSetting(
+            forKey: Keys.websiteCopyToClipboardAfterSend,
+            defaultValue: false
+        )
+        websitePlayAudioAfterSend = Self.boolSetting(
+            forKey: Keys.websitePlayAudioAfterSend,
+            defaultValue: false
+        )
+    }
+
+    func postSendActions(for feature: FeatureSendSource) -> PostSendActions {
+        switch feature {
+        case .screenshot:
+            return PostSendActions(
+                openChat: screenshotOpenChatAfterSend,
+                copyToClipboard: screenshotCopyToClipboardAfterSend,
+                playAudio: screenshotPlayAudioAfterSend
+            )
+        case .website:
+            return PostSendActions(
+                openChat: websiteOpenChatAfterSend,
+                copyToClipboard: websiteCopyToClipboardAfterSend,
+                playAudio: websitePlayAudioAfterSend
+            )
+        }
+    }
+
+    private static func boolSetting(forKey key: String, defaultValue: Bool) -> Bool {
+        if UserDefaults.standard.object(forKey: key) != nil {
+            return UserDefaults.standard.bool(forKey: key)
+        }
+        return defaultValue
+    }
+
+    func addWebsiteURLPromptOverride() {
+        websiteURLPromptOverrides.append(WebsiteURLPromptOverride())
+    }
+
+    func removeWebsiteURLPromptOverride(id: UUID) {
+        websiteURLPromptOverrides.removeAll { $0.id == id }
+    }
+
+    private func persistWebsiteURLPromptOverrides() {
+        if let data = try? JSONEncoder().encode(websiteURLPromptOverrides) {
+            UserDefaults.standard.set(data, forKey: Keys.websiteURLPromptOverrides)
+        }
     }
 
     func combo(for action: HotkeyAction) -> KeyCombo {

@@ -73,6 +73,25 @@ struct MessageBubbleView: View {
 
     @ViewBuilder
     private func markdownText(_ content: String) -> some View {
+        let normalized = MessageMarkdownPreprocessor.prepareForDisplay(content)
+        let paragraphs = normalized
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if paragraphs.count <= 1 {
+            markdownBlock(normalized)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
+                    markdownBlock(paragraph)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func markdownBlock(_ content: String) -> some View {
         if let attributed = try? AttributedString(markdown: content) {
             Text(attributed)
         } else {

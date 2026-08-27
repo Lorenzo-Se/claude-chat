@@ -13,6 +13,9 @@ final class ChatViewModel: ObservableObject {
     private let processManager: ClaudeProcessManager
     private let settings: AppSettings
 
+    private var pendingFeatureSource: FeatureSendSource?
+    var showPanel: (() -> Void)?
+
     init(conversation: Conversation, store: ConversationStore, processManager: ClaudeProcessManager, settings: AppSettings = .shared) {
         self.conversation = conversation
         self.store = store
@@ -35,10 +38,13 @@ final class ChatViewModel: ObservableObject {
         pendingAttachmentPath = nil
     }
 
-    func sendMessage() async {
+    func sendMessage(featureSource: FeatureSendSource? = nil) async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         let attachment = pendingAttachmentPath
         guard !text.isEmpty || attachment != nil, !isLoading else { return }
+
+        let activeFeatureSource = featureSource ?? pendingFeatureSource
+        pendingFeatureSource = nil
 
         inputText = ""
         pendingAttachmentPath = nil
@@ -98,6 +104,23 @@ final class ChatViewModel: ObservableObject {
             }
 
             try store.save(conversation)
+
+            if let activeFeatureSource {
+                let finalText = response.result
+                    ?? (assistantIndex < conversation.messages.count
+                        ? conversation.messages[assistantIndex].content
+                        : "")
+                if !finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    let actions = settings.postSendActions(for: activeFeatureSource)
+                    PostSendActionHandler.apply(
+                        actions: actions,
+                        response: finalText,
+                        showPanel: { [weak self] in
+                            self?.showPanel?()
+                        }
+                    )
+                }
+            }
         } catch {
             if assistantIndex < conversation.messages.count,
                conversation.messages[assistantIndex].content.isEmpty {
@@ -111,23 +134,48 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
-    func sendScreenshot(path: String, prompt: String = "") async {
+    func sendScreenshot(path: String) async {
         attachScreenshot(path: path)
-        inputText = prompt
-        await sendMessage()
+        errorMessage = nil
+        pendingFeatureSource = .screenshot
+
+        if settings.screenshotSystemPromptEnabled {
+            let prompt = WebsiteContentService.applyScreenshotTemplate(
+                settings.screenshotSystemPrompt,
+                path: path
+            )
+            inputText = prompt
+            await sendMessage(featureSource: .screenshot)
+        } else {
+            inputText = ""
+        }
     }
 
-    func sendWebsiteContent(prompt: String, pageTitle: String) async {
-        inputText = prompt
+    func handleWebsiteContent(_ content: WebsiteContent) async {
         errorMessage = nil
+        pendingFeatureSource = .website
 
+        if settings.websiteSystemPromptEnabled {
+            let template = WebsiteContentService.resolveSystemPrompt(
+                for: content,
+                defaultPrompt: settings.websiteSystemPrompt,
+                overrides: settings.websiteURLPromptOverrides
+            )
+            inputText = WebsiteContentService.applyTemplate(template, content: content)
+            prepareConversationTitle(for: content.title)
+            await sendMessage(featureSource: .website)
+        } else {
+            inputText = WebsiteContentService.buildRawContent(for: content)
+            prepareConversationTitle(for: content.title)
+        }
+    }
+
+    private func prepareConversationTitle(for pageTitle: String) {
         if conversation.title == "Neue Konversation" {
             let titleSource = pageTitle.isEmpty ? "Website" : pageTitle
             conversation.title = String(titleSource.prefix(40))
             try? store.save(conversation)
         }
-
-        await sendMessage()
     }
 
     func stopGeneration() {
@@ -140,6 +188,7 @@ final class ChatViewModel: ObservableObject {
         conversation = newConv
         inputText = ""
         pendingAttachmentPath = nil
+        pendingFeatureSource = nil
         errorMessage = nil
         streamingMessageId = nil
     }

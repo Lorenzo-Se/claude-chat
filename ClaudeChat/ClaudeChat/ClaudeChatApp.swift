@@ -6,6 +6,7 @@ struct ClaudeChatApp: App {
 
     var body: some Scene {
         Settings {
+            SettingsRegistrationView()
             SettingsView()
         }
     }
@@ -36,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupPanel()
         setupHotkeys()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            SettingsOpener.preloadRegistration()
+        }
 
         settingsObserver = NotificationCenter.default.addObserver(
             forName: .appSettingsDidChange,
@@ -70,18 +75,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildStatusMenu() {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(
+
+        let toggleItem = NSMenuItem(
             title: "Chat ein-/ausblenden (\(settings.label(for: .toggleChat)))",
             action: #selector(togglePanel),
             keyEquivalent: ""
-        ))
-        menu.addItem(NSMenuItem(
+        )
+        toggleItem.target = self
+        menu.addItem(toggleItem)
+
+        let settingsItem = NSMenuItem(
             title: "Einstellungen…",
             action: #selector(openSettings),
             keyEquivalent: ","
-        ))
+        )
+        settingsItem.keyEquivalentModifierMask = .command
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Beenden", action: #selector(quit), keyEquivalent: "q"))
+
+        let quitItem = NSMenuItem(title: "Beenden", action: #selector(quit), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+
         statusMenu = menu
     }
 
@@ -95,10 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openSettings() {
-        if #available(macOS 14, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        }
-        NSApp.activate(ignoringOtherApps: true)
+        SettingsOpener.open()
     }
 
     private func setupPanel() {
@@ -111,6 +125,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settings: settings
         )
         chatViewModel = viewModel
+        viewModel.showPanel = { [weak self] in
+            self?.panelController?.show()
+        }
 
         let chatView = ChatView(viewModel: viewModel, store: store)
         let controller = FloatingPanelController(rootView: chatView, settings: settings)
@@ -152,7 +169,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleFullscreenCapture() async {
         do {
             let path = try await screenshotService.captureFullscreen()
-            panelController?.show()
+            if shouldShowPanelOnFeatureTrigger(systemPromptEnabled: settings.screenshotSystemPromptEnabled) {
+                panelController?.show()
+            }
             await chatViewModel?.sendScreenshot(path: path)
         } catch {
             showCaptureError(error)
@@ -162,7 +181,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleRegionCapture() async {
         do {
             let path = try await screenshotService.captureRegion()
-            panelController?.show()
+            if shouldShowPanelOnFeatureTrigger(systemPromptEnabled: settings.screenshotSystemPromptEnabled) {
+                panelController?.show()
+            }
             await chatViewModel?.sendScreenshot(path: path)
         } catch ScreenshotCaptureError.captureFailed("Auswahl abgebrochen") {
             // Keine Meldung bei Abbruch
@@ -174,12 +195,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleWebsiteExtract() async {
         do {
             let content = try await WebsiteContentService.extractFromActiveTab()
-            let prompt = WebsiteContentService.buildPrompt(for: content)
-            panelController?.show()
-            await chatViewModel?.sendWebsiteContent(prompt: prompt, pageTitle: content.title)
+            if shouldShowPanelOnFeatureTrigger(systemPromptEnabled: settings.websiteSystemPromptEnabled) {
+                panelController?.show()
+            }
+            await chatViewModel?.handleWebsiteContent(content)
         } catch {
             showWebsiteExtractError(error)
         }
+    }
+
+    /// Panel beim Auslösen nur öffnen, wenn der Nutzer Inhalt vor dem Senden bearbeiten muss.
+    private func shouldShowPanelOnFeatureTrigger(systemPromptEnabled: Bool) -> Bool {
+        !systemPromptEnabled
     }
 
     private func showCaptureError(_ error: Error) {

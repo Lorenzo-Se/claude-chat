@@ -118,6 +118,10 @@ final class ClaudeProcessManager: ObservableObject {
     static func buildPrompt(text: String, attachmentPath: String?) -> String {
         guard let attachmentPath else { return text }
 
+        if text.contains(attachmentPath) {
+            return text
+        }
+
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             return "Analysiere diesen Screenshot: \(attachmentPath)"
