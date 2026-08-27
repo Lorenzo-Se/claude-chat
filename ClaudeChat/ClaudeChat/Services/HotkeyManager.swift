@@ -1,69 +1,88 @@
 import AppKit
 import HotKey
 
-enum AppShortcuts {
-    /// Chat-Fenster ein-/ausblenden (selten belegt: ⌃⌥⌘K)
-    static let toggleChat = (key: Key.k, modifiers: NSEvent.ModifierFlags([.control, .option, .command]))
-    static let toggleChatLabel = "⌃⌥⌘K"
-
-    static func matchesToggleChat(_ event: NSEvent) -> Bool {
-        let required = toggleChat.modifiers.intersection(.deviceIndependentFlagsMask)
-        let actual = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        return actual == required && event.keyCode == UInt16(toggleChat.key.carbonKeyCode)
-    }
-
-    static let fullscreenCapture = (key: Key.s, modifiers: NSEvent.ModifierFlags([.option, .shift]))
-    static let regionCapture = (key: Key.d, modifiers: NSEvent.ModifierFlags([.option, .shift]))
-    static let websiteExtract = (key: Key.w, modifiers: NSEvent.ModifierFlags([.option, .shift]))
-}
-
 @MainActor
 final class HotkeyManager {
     private var toggleHotKey: HotKey?
     private var fullscreenHotKey: HotKey?
     private var regionHotKey: HotKey?
     private var websiteExtractHotKey: HotKey?
+    private var newConversationHotKey: HotKey?
 
+    private let settings: AppSettings
     private let onToggle: () -> Void
     private let onFullscreenCapture: () -> Void
     private let onRegionCapture: () -> Void
     private let onWebsiteExtract: () -> Void
+    private let onNewConversation: () -> Void
+
+    private var settingsObserver: NSObjectProtocol?
 
     init(
+        settings: AppSettings = .shared,
         onToggle: @escaping () -> Void,
         onFullscreenCapture: @escaping () -> Void,
         onRegionCapture: @escaping () -> Void,
-        onWebsiteExtract: @escaping () -> Void
+        onWebsiteExtract: @escaping () -> Void,
+        onNewConversation: @escaping () -> Void
     ) {
+        self.settings = settings
         self.onToggle = onToggle
         self.onFullscreenCapture = onFullscreenCapture
         self.onRegionCapture = onRegionCapture
         self.onWebsiteExtract = onWebsiteExtract
-        registerDefaultHotkeys()
-    }
+        self.onNewConversation = onNewConversation
 
-    func registerDefaultHotkeys() {
-        toggleHotKey = HotKey(key: AppShortcuts.toggleChat.key, modifiers: AppShortcuts.toggleChat.modifiers)
-        toggleHotKey?.keyDownHandler = { [weak self] in
-            DispatchQueue.main.async {
-                self?.onToggle()
+        registerHotkeys()
+
+        settingsObserver = NotificationCenter.default.addObserver(
+            forName: .appSettingsDidChange,
+            object: settings,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.registerHotkeys()
             }
         }
+    }
 
-        fullscreenHotKey = HotKey(key: AppShortcuts.fullscreenCapture.key, modifiers: AppShortcuts.fullscreenCapture.modifiers)
-        fullscreenHotKey?.keyDownHandler = { [weak self] in
-            self?.onFullscreenCapture()
+    deinit {
+        if let settingsObserver {
+            NotificationCenter.default.removeObserver(settingsObserver)
         }
+    }
 
-        regionHotKey = HotKey(key: AppShortcuts.regionCapture.key, modifiers: AppShortcuts.regionCapture.modifiers)
-        regionHotKey?.keyDownHandler = { [weak self] in
-            self?.onRegionCapture()
-        }
+    func registerHotkeys() {
+        clearHotkeys()
+        register(.toggleChat, handler: { [weak self] in
+            DispatchQueue.main.async { self?.onToggle() }
+        }, assign: { self.toggleHotKey = $0 })
 
-        websiteExtractHotKey = HotKey(key: AppShortcuts.websiteExtract.key, modifiers: AppShortcuts.websiteExtract.modifiers)
-        websiteExtractHotKey?.keyDownHandler = { [weak self] in
-            self?.onWebsiteExtract()
-        }
+        register(.fullscreenCapture, handler: { [weak self] in self?.onFullscreenCapture() }, assign: { self.fullscreenHotKey = $0 })
+        register(.regionCapture, handler: { [weak self] in self?.onRegionCapture() }, assign: { self.regionHotKey = $0 })
+        register(.websiteExtract, handler: { [weak self] in self?.onWebsiteExtract() }, assign: { self.websiteExtractHotKey = $0 })
+        register(.newConversation, handler: { [weak self] in self?.onNewConversation() }, assign: { self.newConversationHotKey = $0 })
+    }
+
+    private func register(
+        _ action: HotkeyAction,
+        handler: @escaping () -> Void,
+        assign: (HotKey) -> Void
+    ) {
+        let combo = settings.combo(for: action)
+        guard let key = combo.key else { return }
+
+        let hotKey = HotKey(key: key, modifiers: combo.modifiers)
+        hotKey.keyDownHandler = handler
+        assign(hotKey)
+    }
+
+    private func clearHotkeys() {
+        toggleHotKey = nil
+        fullscreenHotKey = nil
+        regionHotKey = nil
+        websiteExtractHotKey = nil
+        newConversationHotKey = nil
     }
 
     /// Globaler Hotkey pausieren, wenn das Panel sichtbar ist — lokaler Monitor übernimmt dann.

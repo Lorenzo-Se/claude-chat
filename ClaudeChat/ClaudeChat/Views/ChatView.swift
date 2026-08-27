@@ -11,11 +11,13 @@ final class ChatViewModel: ObservableObject {
 
     private let store: ConversationStore
     private let processManager: ClaudeProcessManager
+    private let settings: AppSettings
 
-    init(conversation: Conversation, store: ConversationStore, processManager: ClaudeProcessManager) {
+    init(conversation: Conversation, store: ConversationStore, processManager: ClaudeProcessManager, settings: AppSettings = .shared) {
         self.conversation = conversation
         self.store = store
         self.processManager = processManager
+        self.settings = settings
     }
 
     func reloadFromStore() {
@@ -73,7 +75,9 @@ final class ChatViewModel: ObservableObject {
                 prompt: text,
                 conversationId: conversation.id,
                 sessionId: conversation.claudeSessionId,
-                attachmentPath: attachment
+                attachmentPath: attachment,
+                model: settings.model.cliValue,
+                streamingEnabled: settings.streamingEnabled
             ) { [weak self] delta in
                 guard let self else { return }
                 guard assistantIndex < self.conversation.messages.count else { return }
@@ -144,16 +148,24 @@ final class ChatViewModel: ObservableObject {
 struct ChatView: View {
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var store: ConversationStore
+    @State private var showsConversationList = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            messageList
-            Divider()
-            inputArea
+        HStack(spacing: 0) {
+            if showsConversationList {
+                conversationSidebar
+                Divider()
+            }
+
+            VStack(spacing: 0) {
+                header
+                Divider()
+                messageList
+                Divider()
+                inputArea
+            }
         }
-        .frame(minWidth: 360, minHeight: 480)
+        .frame(minWidth: showsConversationList ? 520 : 360, minHeight: 480)
         .onChange(of: store.activeConversationId) { _, newId in
             if let newId, let loaded = store.loadConversation(id: newId) {
                 viewModel.conversation = loaded
@@ -161,8 +173,42 @@ struct ChatView: View {
         }
     }
 
+    private var conversationSidebar: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Konversationen")
+                .font(.headline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+
+            List(selection: Binding(
+                get: { store.activeConversationId },
+                set: { newId in
+                    if let newId {
+                        store.activeConversationId = newId
+                    }
+                }
+            )) {
+                ForEach(store.conversations) { entry in
+                    Text(entry.title)
+                        .lineLimit(1)
+                        .tag(Optional(entry.id))
+                }
+            }
+            .listStyle(.sidebar)
+        }
+        .frame(width: 160)
+    }
+
     private var header: some View {
         HStack {
+            Button {
+                showsConversationList.toggle()
+            } label: {
+                Image(systemName: showsConversationList ? "sidebar.left" : "sidebar.right")
+            }
+            .buttonStyle(.borderless)
+            .help("Konversationen anzeigen")
+
             Text(viewModel.conversation.title)
                 .font(.headline)
                 .lineLimit(1)

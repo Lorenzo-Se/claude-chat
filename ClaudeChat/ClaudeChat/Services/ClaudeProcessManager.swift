@@ -56,8 +56,12 @@ final class ClaudeProcessManager: ObservableObject {
         sessionId: String?,
         attachmentPath: String? = nil,
         model: String? = nil,
+        streamingEnabled: Bool? = nil,
         onStreamUpdate: ((String) -> Void)? = nil
     ) async throws -> ClaudeResponse {
+        let effectiveModel = model ?? AppSettings.shared.model.cliValue
+        let effectiveStreaming = streamingEnabled ?? AppSettings.shared.streamingEnabled
+
         guard activeProcesses[conversationId] == nil else {
             throw ClaudeProcessError.processFailed(exitCode: -1, stderr: "Bereits ein Request aktiv für diese Konversation.")
         }
@@ -86,7 +90,8 @@ final class ClaudeProcessManager: ObservableObject {
                 conversationId: conversationId,
                 sessionId: sessionId,
                 attachmentPath: attachmentPath,
-                model: model,
+                model: effectiveModel,
+                streamingEnabled: effectiveStreaming,
                 onStreamUpdate: onStreamUpdate
             )
         } onCancel: {
@@ -127,6 +132,158 @@ final class ClaudeProcessManager: ObservableObject {
         sessionId: String?,
         attachmentPath: String?,
         model: String?,
+        streamingEnabled: Bool,
+        onStreamUpdate: ((String) -> Void)?
+    ) async throws -> ClaudeResponse {
+        if streamingEnabled {
+            try await runStreamingProcess(
+                cliPath: cliPath,
+                prompt: prompt,
+                conversationId: conversationId,
+                sessionId: sessionId,
+                attachmentPath: attachmentPath,
+                model: model,
+                onStreamUpdate: onStreamUpdate
+            )
+        } else {
+            try await runBlockingJSONProcess(
+                cliPath: cliPath,
+                prompt: prompt,
+                conversationId: conversationId,
+                sessionId: sessionId,
+                attachmentPath: attachmentPath,
+                model: model
+            )
+        }
+    }
+
+    private func runBlockingJSONProcess(
+        cliPath: String,
+        prompt: String,
+        conversationId: UUID,
+        sessionId: String?,
+        attachmentPath: String?,
+        model: String?
+    ) async throws -> ClaudeResponse {
+        try await withCheckedThrowingContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: cliPath)
+
+            var arguments = [
+                "-p", prompt,
+                "--output-format", "json",
+                "--permission-mode", "dontAsk",
+                "--settings", Self.headlessSettingsJSON
+            ]
+
+            if attachmentPath != nil {
+                arguments.append(contentsOf: ["--allowedTools", "Read"])
+            }
+
+            if let sessionId {
+                arguments.append(contentsOf: ["--resume", sessionId])
+            }
+
+            if let model, !model.isEmpty {
+                arguments.append(contentsOf: ["--model", model])
+            }
+
+            process.arguments = arguments
+            configureProcessEnvironment(process)
+
+            let stdoutPipe = Pipe()
+            let stderrPipe = Pipe()
+            let stdinPipe = Pipe()
+            process.standardOutput = stdoutPipe
+            process.standardError = stderrPipe
+            process.standardInput = stdinPipe
+            try? stdinPipe.fileHandleForWriting.close()
+
+            activeProcesses[conversationId] = process
+
+            let timeoutTask = Task {
+                try await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+                if process.isRunning {
+                    timedOutConversationIds.insert(conversationId)
+                    process.terminate()
+                }
+            }
+
+            process.terminationHandler = { [weak self] proc in
+                timeoutTask.cancel()
+
+                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                let stdout = String(data: stdoutData, encoding: .utf8) ?? ""
+                let stderr = String(data: stderrData, encoding: .utf8) ?? ""
+
+                Task { @MainActor in
+                    self?.activeProcesses.removeValue(forKey: conversationId)
+
+                    let wasCancelled = self?.cancelledConversationIds.remove(conversationId) != nil
+                    let wasTimeout = self?.timedOutConversationIds.remove(conversationId) != nil
+
+                    if Task.isCancelled || wasCancelled {
+                        continuation.resume(throwing: ClaudeProcessError.cancelled)
+                        return
+                    }
+
+                    if wasTimeout {
+                        continuation.resume(throwing: ClaudeProcessError.timeout)
+                        return
+                    }
+
+                    guard proc.terminationStatus == 0 else {
+                        if stderr.contains("not logged in") || stderr.contains("login") {
+                            continuation.resume(throwing: ClaudeProcessError.cliNotFound)
+                            return
+                        }
+                        continuation.resume(throwing: ClaudeProcessError.processFailed(
+                            exitCode: proc.terminationStatus,
+                            stderr: stderr.isEmpty ? stdout : stderr
+                        ))
+                        return
+                    }
+
+                    guard let jsonData = stdoutData.nonEmpty,
+                          let response = try? JSONDecoder().decode(ClaudeResponse.self, from: jsonData) else {
+                        continuation.resume(throwing: ClaudeProcessError.parseFailed(
+                            stderr.isEmpty ? "Keine JSON-Antwort erhalten" : stderr
+                        ))
+                        return
+                    }
+
+                    if response.isError {
+                        continuation.resume(throwing: ClaudeProcessError.processFailed(
+                            exitCode: 1,
+                            stderr: response.result ?? "Unbekannter Fehler"
+                        ))
+                    } else {
+                        continuation.resume(returning: response)
+                    }
+                }
+            }
+
+            do {
+                try process.run()
+            } catch {
+                timeoutTask.cancel()
+                activeProcesses.removeValue(forKey: conversationId)
+                continuation.resume(throwing: ClaudeProcessError.processFailed(
+                    exitCode: -1,
+                    stderr: error.localizedDescription
+                ))
+            }
+        }
+    }
+
+    private func runStreamingProcess(
+        cliPath: String,
+        prompt: String,
+        conversationId: UUID,
+        sessionId: String?,
+        attachmentPath: String?,
+        model: String?,
         onStreamUpdate: ((String) -> Void)?
     ) async throws -> ClaudeResponse {
         try await withCheckedThrowingContinuation { continuation in
@@ -155,12 +312,7 @@ final class ClaudeProcessManager: ObservableObject {
             }
 
             process.arguments = arguments
-
-            var environment = ProcessInfo.processInfo.environment
-            environment["HOME"] = NSHomeDirectory()
-            environment["USER"] = NSUserName()
-            process.environment = environment
-            process.currentDirectoryURL = URL(fileURLWithPath: NSHomeDirectory())
+            configureProcessEnvironment(process)
 
             let stdoutPipe = Pipe()
             let stderrPipe = Pipe()
@@ -346,5 +498,19 @@ final class ClaudeProcessManager: ObservableObject {
                 )))
             }
         }
+    }
+
+    private func configureProcessEnvironment(_ process: Process) {
+        var environment = ProcessInfo.processInfo.environment
+        environment["HOME"] = NSHomeDirectory()
+        environment["USER"] = NSUserName()
+        process.environment = environment
+        process.currentDirectoryURL = URL(fileURLWithPath: NSHomeDirectory())
+    }
+}
+
+private extension Data {
+    var nonEmpty: Data? {
+        isEmpty ? nil : self
     }
 }

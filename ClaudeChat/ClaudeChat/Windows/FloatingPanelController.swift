@@ -37,13 +37,15 @@ final class FloatingPanelController: ObservableObject {
 
     private var panel: FloatingPanel?
     private var localKeyMonitor: Any?
-    private let rootView: AnyView
+    private var rootView: AnyView
+    private let settings: AppSettings
 
     var onToggleShortcut: (() -> Void)?
     var onVisibilityChanged: ((Bool) -> Void)?
 
-    init<Content: View>(rootView: Content) {
+    init<Content: View>(rootView: Content, settings: AppSettings = .shared) {
         self.rootView = AnyView(rootView)
+        self.settings = settings
     }
 
     func toggle() {
@@ -133,7 +135,9 @@ final class FloatingPanelController: ObservableObject {
         guard localKeyMonitor == nil else { return }
 
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, AppShortcuts.matchesToggleChat(event) else { return event }
+            guard let self else { return event }
+            let combo = self.settings.combo(for: .toggleChat)
+            guard combo.matches(event) else { return event }
             self.onToggleShortcut?()
             return nil
         }
