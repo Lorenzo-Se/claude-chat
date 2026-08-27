@@ -5,9 +5,19 @@ struct ClaudeChatApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        Settings {
+        // Verstecktes Fenster vor der Settings-Scene: liefert den SwiftUI-Kontext für `openSettings`.
+        Window("Hidden", id: SettingsBridge.windowID) {
             SettingsRegistrationView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1, height: 1)
+        .windowResizability(.contentSize)
+
+        Settings {
             SettingsView()
+                .onDisappear {
+                    SettingsOpener.restoreAccessoryPolicy()
+                }
         }
     }
 }
@@ -27,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusMenu: NSMenu?
     private var settingsObserver: NSObjectProtocol?
 
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
@@ -37,10 +51,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupPanel()
         setupHotkeys()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            SettingsOpener.preloadRegistration()
-        }
 
         settingsObserver = NotificationCenter.default.addObserver(
             forName: .appSettingsDidChange,
