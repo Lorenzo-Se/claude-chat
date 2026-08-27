@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         ScreenshotStore.shared.cleanupOldScreenshots()
+        NativeMessagingHostInstaller.installIfNeeded()
 
         setupStatusItem()
         setupPanel()
@@ -97,6 +98,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             onRegionCapture: { [weak self] in
                 Task { await self?.handleRegionCapture() }
+            },
+            onWebsiteExtract: { [weak self] in
+                Task { await self?.handleWebsiteExtract() }
             }
         )
     }
@@ -123,9 +127,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func handleWebsiteExtract() async {
+        do {
+            let content = try await WebsiteContentService.extractFromActiveTab()
+            let prompt = WebsiteContentService.buildPrompt(for: content)
+            panelController?.show()
+            await chatViewModel?.sendWebsiteContent(prompt: prompt, pageTitle: content.title)
+        } catch {
+            showWebsiteExtractError(error)
+        }
+    }
+
     private func showCaptureError(_ error: Error) {
         let alert = NSAlert()
         alert.messageText = "Screenshot fehlgeschlagen"
+        alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func showWebsiteExtractError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "Website-Extraktion fehlgeschlagen"
         alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")

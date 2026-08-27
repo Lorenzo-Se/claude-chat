@@ -14,6 +14,7 @@ enum AppShortcuts {
 
     static let fullscreenCapture = (key: Key.s, modifiers: NSEvent.ModifierFlags([.option, .shift]))
     static let regionCapture = (key: Key.d, modifiers: NSEvent.ModifierFlags([.option, .shift]))
+    static let websiteExtract = (key: Key.w, modifiers: NSEvent.ModifierFlags([.option, .shift]))
 }
 
 @MainActor
@@ -21,19 +22,23 @@ final class HotkeyManager {
     private var toggleHotKey: HotKey?
     private var fullscreenHotKey: HotKey?
     private var regionHotKey: HotKey?
+    private var websiteExtractHotKey: HotKey?
 
     private let onToggle: () -> Void
     private let onFullscreenCapture: () -> Void
     private let onRegionCapture: () -> Void
+    private let onWebsiteExtract: () -> Void
 
     init(
         onToggle: @escaping () -> Void,
         onFullscreenCapture: @escaping () -> Void,
-        onRegionCapture: @escaping () -> Void
+        onRegionCapture: @escaping () -> Void,
+        onWebsiteExtract: @escaping () -> Void
     ) {
         self.onToggle = onToggle
         self.onFullscreenCapture = onFullscreenCapture
         self.onRegionCapture = onRegionCapture
+        self.onWebsiteExtract = onWebsiteExtract
         registerDefaultHotkeys()
     }
 
@@ -53,6 +58,11 @@ final class HotkeyManager {
         regionHotKey = HotKey(key: AppShortcuts.regionCapture.key, modifiers: AppShortcuts.regionCapture.modifiers)
         regionHotKey?.keyDownHandler = { [weak self] in
             self?.onRegionCapture()
+        }
+
+        websiteExtractHotKey = HotKey(key: AppShortcuts.websiteExtract.key, modifiers: AppShortcuts.websiteExtract.modifiers)
+        websiteExtractHotKey?.keyDownHandler = { [weak self] in
+            self?.onWebsiteExtract()
         }
     }
 

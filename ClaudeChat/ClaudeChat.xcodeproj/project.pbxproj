@@ -23,6 +23,11 @@
 		A10000010000000000000014 /* ScreenshotCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000015 /* ScreenshotCaptureService.swift */; };
 		A10000010000000000000015 /* RegionSelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000016 /* RegionSelectionOverlay.swift */; };
 		A10000010000000000000016 /* StreamJSONParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000017 /* StreamJSONParser.swift */; };
+		A10000010000000000000017 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000018 /* main.swift */; };
+		A10000010000000000000018 /* WebsiteExtractionConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* WebsiteExtractionConstants.swift */; };
+		A10000010000000000000019 /* NativeMessagingHostInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* NativeMessagingHostInstaller.swift */; };
+		A10000010000000000000020 /* WebsiteContentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* WebsiteContentService.swift */; };
+		A10000010000000000000021 /* ClaudeChatNativeHost in Copy Files */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* ClaudeChatNativeHost */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +48,11 @@
 		A20000010000000000000015 /* ScreenshotCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCaptureService.swift; sourceTree = "<group>"; };
 		A20000010000000000000016 /* RegionSelectionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSelectionOverlay.swift; sourceTree = "<group>"; };
 		A20000010000000000000017 /* StreamJSONParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamJSONParser.swift; sourceTree = "<group>"; };
+		A20000010000000000000018 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A20000010000000000000019 /* ClaudeChatNativeHost */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ClaudeChatNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000010000000000000020 /* WebsiteExtractionConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteExtractionConstants.swift; sourceTree = "<group>"; };
+		A20000010000000000000021 /* NativeMessagingHostInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostInstaller.swift; sourceTree = "<group>"; };
+		A20000010000000000000022 /* WebsiteContentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteContentService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				A40000010000000000000002 /* ClaudeChat */,
+				A40000010000000000000008 /* ClaudeChatNativeHost */,
 				A40000010000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -82,8 +93,17 @@
 			isa = PBXGroup;
 			children = (
 				A20000010000000000000012 /* ClaudeChat.app */,
+				A20000010000000000000019 /* ClaudeChatNativeHost */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A40000010000000000000008 /* ClaudeChatNativeHost */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000018 /* main.swift */,
+			);
+			path = ClaudeChatNativeHost;
 			sourceTree = "<group>";
 		};
 		A40000010000000000000004 /* Models */ = {
@@ -106,6 +126,9 @@
 				A20000010000000000000013 /* ScreenshotStore.swift */,
 				A20000010000000000000014 /* ScreenCapturePermissionManager.swift */,
 				A20000010000000000000015 /* ScreenshotCaptureService.swift */,
+				A20000010000000000000020 /* WebsiteExtractionConstants.swift */,
+				A20000010000000000000021 /* NativeMessagingHostInstaller.swift */,
+				A20000010000000000000022 /* WebsiteContentService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -130,6 +153,20 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A70000010000000000000003 /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				A10000010000000000000021 /* ClaudeChatNativeHost in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		A60000010000000000000001 /* ClaudeChat */ = {
 			isa = PBXNativeTarget;
@@ -137,10 +174,12 @@
 			buildPhases = (
 				A70000010000000000000001 /* Sources */,
 				A30000010000000000000001 /* Frameworks */,
+				A70000010000000000000003 /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A60000010000000000000003 /* PBXTargetDependency */,
 			);
 			name = ClaudeChat;
 			packageProductDependencies = (
@@ -150,7 +189,40 @@
 			productReference = A20000010000000000000012 /* ClaudeChat.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A60000010000000000000002 /* ClaudeChatNativeHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000010000000000000004 /* Build configuration list for PBXNativeTarget "ClaudeChatNativeHost" */;
+			buildPhases = (
+				A70000010000000000000002 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClaudeChatNativeHost;
+			productName = ClaudeChatNativeHost;
+			productReference = A20000010000000000000019 /* ClaudeChatNativeHost */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A60000010000000000000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A90000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A60000010000000000000002;
+			remoteInfo = ClaudeChatNativeHost;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A60000010000000000000003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A60000010000000000000002 /* ClaudeChatNativeHost */;
+			targetProxy = A60000010000000000000004 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		A90000010000000000000001 /* Project object */ = {
@@ -161,6 +233,9 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					A60000010000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					A60000010000000000000002 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
@@ -183,6 +258,7 @@
 			projectRoot = "";
 			targets = (
 				A60000010000000000000001 /* ClaudeChat */,
+				A60000010000000000000002 /* ClaudeChatNativeHost */,
 			);
 		};
 /* End PBXProject section */
@@ -207,6 +283,17 @@
 				A10000010000000000000013 /* ScreenCapturePermissionManager.swift in Sources */,
 				A10000010000000000000014 /* ScreenshotCaptureService.swift in Sources */,
 				A10000010000000000000015 /* RegionSelectionOverlay.swift in Sources */,
+				A10000010000000000000018 /* WebsiteExtractionConstants.swift in Sources */,
+				A10000010000000000000019 /* NativeMessagingHostInstaller.swift in Sources */,
+				A10000010000000000000020 /* WebsiteContentService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A70000010000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000017 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -302,6 +389,34 @@
 			};
 			name = Release;
 		};
+		AB0000010000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.claudechat.nativehost;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AB0000010000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.claudechat.nativehost;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -319,6 +434,15 @@
 			buildConfigurations = (
 				AB0000010000000000000003 /* Debug */,
 				AB0000010000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000010000000000000004 /* Build configuration list for PBXNativeTarget "ClaudeChatNativeHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0000010000000000000005 /* Debug */,
+				AB0000010000000000000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,0 +1,32 @@
+{
+  "manifest_version": 2,
+  "name": "Claude Chat Website Extractor",
+  "version": "1.0.0",
+  "description": "Extrahiert Website-Inhalte für die Claude Chat macOS App.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "claudechat@dev.local",
+      "strict_min_version": "91.0"
+    }
+  },
+  "permissions": [
+    "nativeMessaging",
+    "activeTab",
+    "tabs",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon48.png"
+  }
+}

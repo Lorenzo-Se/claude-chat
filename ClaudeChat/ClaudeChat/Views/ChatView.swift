@@ -113,6 +113,19 @@ final class ChatViewModel: ObservableObject {
         await sendMessage()
     }
 
+    func sendWebsiteContent(prompt: String, pageTitle: String) async {
+        inputText = prompt
+        errorMessage = nil
+
+        if conversation.title == "Neue Konversation" {
+            let titleSource = pageTitle.isEmpty ? "Website" : pageTitle
+            conversation.title = String(titleSource.prefix(40))
+            try? store.save(conversation)
+        }
+
+        await sendMessage()
+    }
+
     func stopGeneration() {
         processManager.terminate(conversationId: conversation.id)
     }
