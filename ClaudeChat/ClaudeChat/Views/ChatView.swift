@@ -7,6 +7,7 @@ final class ChatViewModel: ObservableObject {
     @Published var pendingAttachmentPath: String?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published private(set) var streamingMessageId: UUID?
 
     private let store: ConversationStore
     private let processManager: ClaudeProcessManager
@@ -54,10 +55,18 @@ final class ChatViewModel: ObservableObject {
             conversation.title = String(titleSource.prefix(40))
         }
 
+        let assistantMessage = Message(role: .assistant, content: "")
+        conversation.messages.append(assistantMessage)
+        let assistantIndex = conversation.messages.count - 1
+        streamingMessageId = assistantMessage.id
+
         try? store.save(conversation)
 
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            streamingMessageId = nil
+        }
 
         do {
             let response = try await processManager.send(
@@ -65,16 +74,32 @@ final class ChatViewModel: ObservableObject {
                 conversationId: conversation.id,
                 sessionId: conversation.claudeSessionId,
                 attachmentPath: attachment
-            )
+            ) { [weak self] delta in
+                guard let self else { return }
+                guard assistantIndex < self.conversation.messages.count else { return }
+                var message = self.conversation.messages[assistantIndex]
+                message.content += delta
+                self.conversation.messages[assistantIndex] = message
+            }
 
             if let sessionId = response.session_id {
                 conversation.claudeSessionId = sessionId
             }
 
-            let assistantText = response.result ?? ""
-            conversation.messages.append(Message(role: .assistant, content: assistantText))
+            if let finalText = response.result,
+               assistantIndex < conversation.messages.count {
+                var message = conversation.messages[assistantIndex]
+                message.content = finalText
+                conversation.messages[assistantIndex] = message
+            }
+
             try store.save(conversation)
         } catch {
+            if assistantIndex < conversation.messages.count,
+               conversation.messages[assistantIndex].content.isEmpty {
+                conversation.messages.remove(at: assistantIndex)
+            }
+
             let errorText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             conversation.messages.append(Message(role: .system, content: errorText))
             try? store.save(conversation)
@@ -99,6 +124,7 @@ final class ChatViewModel: ObservableObject {
         inputText = ""
         pendingAttachmentPath = nil
         errorMessage = nil
+        streamingMessageId = nil
     }
 }
 
@@ -160,25 +186,22 @@ struct ChatView: View {
                     }
 
                     ForEach(viewModel.conversation.messages) { message in
-                        MessageBubbleView(message: message)
-                            .id(message.id)
-                    }
-
-                    if viewModel.isLoading {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Claude denkt nach …")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.leading, 12)
-                        .id("loading")
+                        MessageBubbleView(
+                            message: message,
+                            isStreaming: viewModel.streamingMessageId == message.id
+                        )
+                        .id(message.id)
                     }
                 }
                 .padding(16)
             }
             .onChange(of: viewModel.conversation.messages.count) { _, _ in
+                scrollToBottom(proxy: proxy)
+            }
+            .onChange(of: viewModel.streamingMessageId) { _, _ in
+                scrollToBottom(proxy: proxy)
+            }
+            .onChange(of: viewModel.conversation.messages.last?.content) { _, _ in
                 scrollToBottom(proxy: proxy)
             }
             .onChange(of: viewModel.isLoading) { _, _ in
@@ -258,10 +281,14 @@ struct ChatView: View {
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy) {
-        if viewModel.isLoading {
-            withAnimation { proxy.scrollTo("loading", anchor: .bottom) }
+        if let streamingId = viewModel.streamingMessageId {
+            withAnimation(.easeOut(duration: 0.15)) {
+                proxy.scrollTo(streamingId, anchor: .bottom)
+            }
         } else if let last = viewModel.conversation.messages.last {
-            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+            withAnimation(.easeOut(duration: 0.15)) {
+                proxy.scrollTo(last.id, anchor: .bottom)
+            }
         }
     }
 }

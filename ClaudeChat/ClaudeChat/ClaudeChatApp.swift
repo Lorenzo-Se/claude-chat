@@ -77,7 +77,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         chatViewModel = viewModel
 
         let chatView = ChatView(viewModel: viewModel, store: store)
-        panelController = FloatingPanelController(rootView: chatView)
+        let controller = FloatingPanelController(rootView: chatView)
+        controller.onToggleShortcut = { [weak self] in
+            self?.togglePanel()
+        }
+        controller.onVisibilityChanged = { [weak self] visible in
+            self?.hotkeyManager?.setTogglePaused(visible)
+        }
+        panelController = controller
     }
 
     private func setupHotkeys() {

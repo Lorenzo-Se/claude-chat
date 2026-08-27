@@ -39,6 +39,8 @@ final class ClaudeProcessManager: ObservableObject {
     @Published private(set) var runningConversationIds: Set<UUID> = []
 
     private var activeProcesses: [UUID: Process] = [:]
+    private var cancelledConversationIds: Set<UUID> = []
+    private var timedOutConversationIds: Set<UUID> = []
     private let timeoutSeconds: TimeInterval = 120
 
     /// Headless-Settings: keine interaktiven Dialoge, Tools vorab freigegeben.
@@ -53,7 +55,8 @@ final class ClaudeProcessManager: ObservableObject {
         conversationId: UUID,
         sessionId: String?,
         attachmentPath: String? = nil,
-        model: String? = nil
+        model: String? = nil,
+        onStreamUpdate: ((String) -> Void)? = nil
     ) async throws -> ClaudeResponse {
         guard activeProcesses[conversationId] == nil else {
             throw ClaudeProcessError.processFailed(exitCode: -1, stderr: "Bereits ein Request aktiv für diese Konversation.")
@@ -83,7 +86,8 @@ final class ClaudeProcessManager: ObservableObject {
                 conversationId: conversationId,
                 sessionId: sessionId,
                 attachmentPath: attachmentPath,
-                model: model
+                model: model,
+                onStreamUpdate: onStreamUpdate
             )
         } onCancel: {
             Task { @MainActor in
@@ -93,10 +97,14 @@ final class ClaudeProcessManager: ObservableObject {
     }
 
     func terminate(conversationId: UUID) {
+        cancelledConversationIds.insert(conversationId)
         activeProcesses[conversationId]?.terminate()
     }
 
     func terminateAll() {
+        for conversationId in activeProcesses.keys {
+            cancelledConversationIds.insert(conversationId)
+        }
         for process in activeProcesses.values {
             process.terminate()
         }
@@ -118,7 +126,8 @@ final class ClaudeProcessManager: ObservableObject {
         conversationId: UUID,
         sessionId: String?,
         attachmentPath: String?,
-        model: String?
+        model: String?,
+        onStreamUpdate: ((String) -> Void)?
     ) async throws -> ClaudeResponse {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
@@ -126,7 +135,9 @@ final class ClaudeProcessManager: ObservableObject {
 
             var arguments = [
                 "-p", prompt,
-                "--output-format", "json",
+                "--output-format", "stream-json",
+                "--verbose",
+                "--include-partial-messages",
                 "--permission-mode", "dontAsk",
                 "--settings", Self.headlessSettingsJSON
             ]
@@ -161,64 +172,165 @@ final class ClaudeProcessManager: ObservableObject {
 
             activeProcesses[conversationId] = process
 
+            let parser = StreamJSONParser()
+            var streamedText = ""
+            var extractedSessionId: String?
+            var finalResponse: ClaudeResponse?
+            var streamErrorMessage: String?
+            var didFinish = false
+
+            func finish(_ result: Result<ClaudeResponse, Error>) {
+                guard !didFinish else { return }
+                didFinish = true
+                stdoutPipe.fileHandleForReading.readabilityHandler = nil
+
+                switch result {
+                case .success(let response):
+                    continuation.resume(returning: response)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            func applyUpdates(_ updates: [StreamJSONUpdate]) {
+                for update in updates {
+                    if let sessionId = update.sessionId {
+                        extractedSessionId = sessionId
+                    }
+
+                    if let delta = update.textDelta {
+                        streamedText += delta
+                        if let onStreamUpdate {
+                            Task { @MainActor in onStreamUpdate(delta) }
+                        }
+                    } else if let fullText = update.fullText {
+                        if fullText.count > streamedText.count {
+                            let suffix = String(fullText.dropFirst(streamedText.count))
+                            if !suffix.isEmpty {
+                                streamedText = fullText
+                                if let onStreamUpdate {
+                                    Task { @MainActor in onStreamUpdate(suffix) }
+                                }
+                            }
+                        } else if streamedText.isEmpty {
+                            streamedText = fullText
+                            if let onStreamUpdate {
+                                Task { @MainActor in onStreamUpdate(fullText) }
+                            }
+                        }
+                    }
+
+                    if let response = update.finalResponse {
+                        finalResponse = response
+                    }
+
+                    if let errorMessage = update.errorMessage {
+                        streamErrorMessage = errorMessage
+                    }
+                }
+            }
+
+            let stdoutHandle = stdoutPipe.fileHandleForReading
+            stdoutHandle.readabilityHandler = { handle in
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                let updates = parser.append(data)
+                guard !updates.isEmpty else { return }
+
+                Task { @MainActor in
+                    applyUpdates(updates)
+                }
+            }
+
             let timeoutTask = Task {
                 try await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
                 if process.isRunning {
+                    timedOutConversationIds.insert(conversationId)
                     process.terminate()
                 }
             }
 
             process.terminationHandler = { [weak self] proc in
                 timeoutTask.cancel()
-                Task { @MainActor in
-                    self?.activeProcesses.removeValue(forKey: conversationId)
-                }
+                stdoutHandle.readabilityHandler = nil
 
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                let trailingStdout = stdoutHandle.readDataToEndOfFile()
                 let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                let stdout = String(data: stdoutData, encoding: .utf8) ?? ""
                 let stderr = String(data: stderrData, encoding: .utf8) ?? ""
 
-                if Task.isCancelled {
-                    continuation.resume(throwing: ClaudeProcessError.cancelled)
-                    return
-                }
+                let trailingUpdates = parser.append(trailingStdout) + parser.flush()
 
-                if proc.terminationStatus == 15 || proc.terminationReason == .uncaughtSignal {
-                    if timeoutTask.isCancelled == false && proc.terminationStatus != 0 {
-                        // timeout path
-                    }
-                }
+                Task { @MainActor in
+                    self?.activeProcesses.removeValue(forKey: conversationId)
 
-                guard proc.terminationStatus == 0 else {
-                    if stderr.contains("not logged in") || stderr.contains("login") {
-                        continuation.resume(throwing: ClaudeProcessError.cliNotFound)
+                    applyUpdates(trailingUpdates)
+
+                    let wasCancelled = self?.cancelledConversationIds.remove(conversationId) != nil
+                    let wasTimeout = self?.timedOutConversationIds.remove(conversationId) != nil
+
+                    if Task.isCancelled || wasCancelled {
+                        finish(.failure(ClaudeProcessError.cancelled))
                         return
                     }
-                    continuation.resume(throwing: ClaudeProcessError.processFailed(
-                        exitCode: proc.terminationStatus,
-                        stderr: stderr.isEmpty ? stdout : stderr
-                    ))
-                    return
-                }
 
-                guard let data = stdout.data(using: .utf8) else {
-                    continuation.resume(throwing: ClaudeProcessError.parseFailed("Keine UTF-8-Ausgabe"))
-                    return
-                }
-
-                do {
-                    let response = try JSONDecoder().decode(ClaudeResponse.self, from: data)
-                    if response.isError {
-                        continuation.resume(throwing: ClaudeProcessError.processFailed(
-                            exitCode: 1,
-                            stderr: response.result ?? "Unbekannter Fehler"
-                        ))
-                    } else {
-                        continuation.resume(returning: response)
+                    if wasTimeout {
+                        finish(.failure(ClaudeProcessError.timeout))
+                        return
                     }
-                } catch {
-                    continuation.resume(throwing: ClaudeProcessError.parseFailed(error.localizedDescription))
+
+                    if let streamErrorMessage {
+                        finish(.failure(ClaudeProcessError.processFailed(
+                            exitCode: 1,
+                            stderr: streamErrorMessage
+                        )))
+                        return
+                    }
+
+                    guard proc.terminationStatus == 0 else {
+                        if stderr.contains("not logged in") || stderr.contains("login") {
+                            finish(.failure(ClaudeProcessError.cliNotFound))
+                            return
+                        }
+                        finish(.failure(ClaudeProcessError.processFailed(
+                            exitCode: proc.terminationStatus,
+                            stderr: stderr.isEmpty ? streamedText : stderr
+                        )))
+                        return
+                    }
+
+                    if let finalResponse {
+                        if finalResponse.isError {
+                            finish(.failure(ClaudeProcessError.processFailed(
+                                exitCode: 1,
+                                stderr: finalResponse.result ?? "Unbekannter Fehler"
+                            )))
+                        } else {
+                            let resolved = ClaudeResponse(
+                                result: finalResponse.result ?? streamedText,
+                                session_id: finalResponse.session_id ?? extractedSessionId,
+                                total_cost_usd: finalResponse.total_cost_usd,
+                                duration_ms: finalResponse.duration_ms,
+                                is_error: finalResponse.is_error
+                            )
+                            finish(.success(resolved))
+                        }
+                        return
+                    }
+
+                    if !streamedText.isEmpty || extractedSessionId != nil {
+                        finish(.success(ClaudeResponse(
+                            result: streamedText,
+                            session_id: extractedSessionId,
+                            total_cost_usd: nil,
+                            duration_ms: nil,
+                            is_error: false
+                        )))
+                        return
+                    }
+
+                    finish(.failure(ClaudeProcessError.parseFailed(
+                        stderr.isEmpty ? "Keine stream-json-Antwort erhalten" : stderr
+                    )))
                 }
             }
 
@@ -226,13 +338,12 @@ final class ClaudeProcessManager: ObservableObject {
                 try process.run()
             } catch {
                 timeoutTask.cancel()
-                Task { @MainActor in
-                    self.activeProcesses.removeValue(forKey: conversationId)
-                }
-                continuation.resume(throwing: ClaudeProcessError.processFailed(
+                stdoutHandle.readabilityHandler = nil
+                activeProcesses.removeValue(forKey: conversationId)
+                finish(.failure(ClaudeProcessError.processFailed(
                     exitCode: -1,
                     stderr: error.localizedDescription
-                ))
+                )))
             }
         }
     }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MessageBubbleView: View {
     let message: Message
+    var isStreaming: Bool = false
 
     private var isUser: Bool { message.role == .user }
     private var isSystem: Bool { message.role == .system }
@@ -32,13 +33,26 @@ struct MessageBubbleView: View {
                     .padding(.vertical, 8)
                     .background(Color.accentColor.opacity(0.2), in: RoundedRectangle(cornerRadius: 12))
                 } else {
-                    markdownText(message.content)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                    HStack(alignment: .bottom, spacing: 4) {
+                        if message.content.isEmpty && isStreaming {
+                            Text("…")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            markdownText(message.content)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                                .textSelection(.enabled)
+                        }
+
+                        if isStreaming && !message.content.isEmpty {
+                            ProgressView()
+                                .controlSize(.mini)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                 }
             }
 
