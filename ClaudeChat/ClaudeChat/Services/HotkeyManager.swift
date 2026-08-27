@@ -90,9 +90,4 @@ final class HotkeyManager {
         sendActiveFileHotKey = nil
         newConversationHotKey = nil
     }
-
-    /// Globaler Hotkey pausieren, wenn das Panel sichtbar ist — lokaler Monitor übernimmt dann.
-    func setTogglePaused(_ paused: Bool) {
-        toggleHotKey?.isPaused = paused
-    }
 }

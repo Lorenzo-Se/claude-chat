@@ -36,16 +36,10 @@ final class FloatingPanelController: ObservableObject {
     @Published private(set) var isVisible = false
 
     private var panel: FloatingPanel?
-    private var localKeyMonitor: Any?
     private var rootView: AnyView
-    private let settings: AppSettings
 
-    var onToggleShortcut: (() -> Void)?
-    var onVisibilityChanged: ((Bool) -> Void)?
-
-    init<Content: View>(rootView: Content, settings: AppSettings = .shared) {
+    init<Content: View>(rootView: Content) {
         self.rootView = AnyView(rootView)
-        self.settings = settings
     }
 
     func toggle() {
@@ -105,16 +99,12 @@ final class FloatingPanelController: ObservableObject {
 
         isVisible = true
         panel.makeKey()
-        startLocalKeyMonitor()
-        onVisibilityChanged?(true)
     }
 
     func hide() {
         guard let panel, isVisible else { return }
 
-        stopLocalKeyMonitor()
         isVisible = false
-        onVisibilityChanged?(false)
 
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.15
@@ -126,28 +116,7 @@ final class FloatingPanelController: ObservableObject {
     }
 
     func orderOutOnClose() {
-        stopLocalKeyMonitor()
         isVisible = false
-        onVisibilityChanged?(false)
-    }
-
-    private func startLocalKeyMonitor() {
-        guard localKeyMonitor == nil else { return }
-
-        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
-            let combo = self.settings.combo(for: .toggleChat)
-            guard combo.matches(event) else { return event }
-            self.onToggleShortcut?()
-            return nil
-        }
-    }
-
-    private func stopLocalKeyMonitor() {
-        if let localKeyMonitor {
-            NSEvent.removeMonitor(localKeyMonitor)
-            self.localKeyMonitor = nil
-        }
     }
 }
 
