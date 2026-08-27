@@ -18,6 +18,10 @@
 		A10000010000000000000009 /* MessageBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000009 /* MessageBubbleView.swift */; };
 		A10000010000000000000010 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000010 /* ChatView.swift */; };
 		A10000010000000000000011 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = A50000010000000000000001 /* HotKey */; };
+		A10000010000000000000012 /* ScreenshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* ScreenshotStore.swift */; };
+		A10000010000000000000013 /* ScreenCapturePermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000014 /* ScreenCapturePermissionManager.swift */; };
+		A10000010000000000000014 /* ScreenshotCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000015 /* ScreenshotCaptureService.swift */; };
+		A10000010000000000000015 /* RegionSelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000016 /* RegionSelectionOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +37,10 @@
 		A20000010000000000000010 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		A20000010000000000000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000010000000000000012 /* ClaudeChat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeChat.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000010000000000000013 /* ScreenshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotStore.swift; sourceTree = "<group>"; };
+		A20000010000000000000014 /* ScreenCapturePermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCapturePermissionManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000015 /* ScreenshotCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCaptureService.swift; sourceTree = "<group>"; };
+		A20000010000000000000016 /* RegionSelectionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSelectionOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,6 +100,9 @@
 				A20000010000000000000005 /* ClaudeCLIResolver.swift */,
 				A20000010000000000000006 /* ClaudeProcessManager.swift */,
 				A20000010000000000000007 /* HotkeyManager.swift */,
+				A20000010000000000000013 /* ScreenshotStore.swift */,
+				A20000010000000000000014 /* ScreenCapturePermissionManager.swift */,
+				A20000010000000000000015 /* ScreenshotCaptureService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -109,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000010000000000000008 /* FloatingPanelController.swift */,
+				A20000010000000000000016 /* RegionSelectionOverlay.swift */,
 			);
 			path = Windows;
 			sourceTree = "<group>";
@@ -187,6 +199,10 @@
 				A10000010000000000000008 /* FloatingPanelController.swift in Sources */,
 				A10000010000000000000009 /* MessageBubbleView.swift in Sources */,
 				A10000010000000000000010 /* ChatView.swift in Sources */,
+				A10000010000000000000012 /* ScreenshotStore.swift in Sources */,
+				A10000010000000000000013 /* ScreenCapturePermissionManager.swift in Sources */,
+				A10000010000000000000014 /* ScreenshotCaptureService.swift in Sources */,
+				A10000010000000000000015 /* RegionSelectionOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

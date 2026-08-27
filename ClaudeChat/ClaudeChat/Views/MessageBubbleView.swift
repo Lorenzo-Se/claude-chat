@@ -18,13 +18,19 @@ struct MessageBubbleView: View {
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                 } else if isUser {
-                    Text(message.content)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.accentColor.opacity(0.2), in: RoundedRectangle(cornerRadius: 12))
+                    VStack(alignment: .trailing, spacing: 8) {
+                        if let path = message.attachmentPath {
+                            attachmentThumbnail(path: path)
+                        }
+
+                        Text(message.content)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .textSelection(.enabled)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.accentColor.opacity(0.2), in: RoundedRectangle(cornerRadius: 12))
                 } else {
                     markdownText(message.content)
                         .font(.body)
@@ -37,6 +43,17 @@ struct MessageBubbleView: View {
             }
 
             if !isUser && !isSystem { Spacer(minLength: 48) }
+        }
+    }
+
+    @ViewBuilder
+    private func attachmentThumbnail(path: String) -> some View {
+        if let image = NSImage(contentsOfFile: path) {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxHeight: 160)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
 

@@ -52,6 +52,7 @@ final class ClaudeProcessManager: ObservableObject {
         prompt: String,
         conversationId: UUID,
         sessionId: String?,
+        attachmentPath: String? = nil,
         model: String? = nil
     ) async throws -> ClaudeResponse {
         guard activeProcesses[conversationId] == nil else {
@@ -73,12 +74,15 @@ final class ClaudeProcessManager: ObservableObject {
             isRunning = !runningConversationIds.isEmpty
         }
 
+        let effectivePrompt = Self.buildPrompt(text: prompt, attachmentPath: attachmentPath)
+
         return try await withTaskCancellationHandler {
             try await runProcess(
                 cliPath: cliPath,
-                prompt: prompt,
+                prompt: effectivePrompt,
                 conversationId: conversationId,
                 sessionId: sessionId,
+                attachmentPath: attachmentPath,
                 model: model
             )
         } onCancel: {
@@ -98,11 +102,22 @@ final class ClaudeProcessManager: ObservableObject {
         }
     }
 
+    static func buildPrompt(text: String, attachmentPath: String?) -> String {
+        guard let attachmentPath else { return text }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return "Analysiere diesen Screenshot: \(attachmentPath)"
+        }
+        return "\(trimmed)\n\nScreenshot: \(attachmentPath)"
+    }
+
     private func runProcess(
         cliPath: String,
         prompt: String,
         conversationId: UUID,
         sessionId: String?,
+        attachmentPath: String?,
         model: String?
     ) async throws -> ClaudeResponse {
         try await withCheckedThrowingContinuation { continuation in
@@ -115,6 +130,10 @@ final class ClaudeProcessManager: ObservableObject {
                 "--permission-mode", "dontAsk",
                 "--settings", Self.headlessSettingsJSON
             ]
+
+            if attachmentPath != nil {
+                arguments.append(contentsOf: ["--allowedTools", "Read"])
+            }
 
             if let sessionId {
                 arguments.append(contentsOf: ["--resume", sessionId])

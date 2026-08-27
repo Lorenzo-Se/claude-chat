@@ -4,6 +4,7 @@ import SwiftUI
 final class ChatViewModel: ObservableObject {
     @Published var conversation: Conversation
     @Published var inputText = ""
+    @Published var pendingAttachmentPath: String?
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -22,18 +23,35 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
+    func attachScreenshot(path: String) {
+        pendingAttachmentPath = path
+        errorMessage = nil
+    }
+
+    func removePendingAttachment() {
+        pendingAttachmentPath = nil
+    }
+
     func sendMessage() async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isLoading else { return }
+        let attachment = pendingAttachmentPath
+        guard !text.isEmpty || attachment != nil, !isLoading else { return }
 
         inputText = ""
+        pendingAttachmentPath = nil
         errorMessage = nil
 
-        let userMessage = Message(role: .user, content: text)
+        let displayContent = text.isEmpty ? "Screenshot" : text
+        let userMessage = Message(
+            role: .user,
+            content: displayContent,
+            attachmentPath: attachment
+        )
         conversation.messages.append(userMessage)
 
         if conversation.title == "Neue Konversation" {
-            conversation.title = String(text.prefix(40))
+            let titleSource = text.isEmpty ? "Screenshot" : text
+            conversation.title = String(titleSource.prefix(40))
         }
 
         try? store.save(conversation)
@@ -45,7 +63,8 @@ final class ChatViewModel: ObservableObject {
             let response = try await processManager.send(
                 prompt: text,
                 conversationId: conversation.id,
-                sessionId: conversation.claudeSessionId
+                sessionId: conversation.claudeSessionId,
+                attachmentPath: attachment
             )
 
             if let sessionId = response.session_id {
@@ -63,6 +82,12 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
+    func sendScreenshot(path: String, prompt: String = "") async {
+        attachScreenshot(path: path)
+        inputText = prompt
+        await sendMessage()
+    }
+
     func stopGeneration() {
         processManager.terminate(conversationId: conversation.id)
     }
@@ -72,6 +97,7 @@ final class ChatViewModel: ObservableObject {
         store.activeConversationId = newConv.id
         conversation = newConv
         inputText = ""
+        pendingAttachmentPath = nil
         errorMessage = nil
     }
 }
@@ -162,32 +188,73 @@ struct ChatView: View {
     }
 
     private var inputArea: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            TextField("Nachricht …", text: $viewModel.inputText, axis: .vertical)
-                .textFieldStyle(.plain)
-                .lineLimit(1...6)
-                .onSubmit {
-                    Task { await viewModel.sendMessage() }
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            if let attachmentPath = viewModel.pendingAttachmentPath {
+                attachmentPreview(path: attachmentPath)
+            }
 
-            if viewModel.isLoading {
-                Button("Stop") {
-                    viewModel.stopGeneration()
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField("Nachricht …", text: $viewModel.inputText, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...6)
+                    .onSubmit {
+                        Task { await viewModel.sendMessage() }
+                    }
+
+                if viewModel.isLoading {
+                    Button("Stop") {
+                        viewModel.stopGeneration()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                } else {
+                    Button {
+                        Task { await viewModel.sendMessage() }
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title2)
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(
+                        viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            && viewModel.pendingAttachmentPath == nil
+                    )
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            } else {
-                Button {
-                    Task { await viewModel.sendMessage() }
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
-                }
-                .buttonStyle(.borderless)
-                .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
         .padding(12)
+    }
+
+    private func attachmentPreview(path: String) -> some View {
+        HStack(spacing: 8) {
+            if let image = NSImage(contentsOfFile: path) {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("Screenshot angehängt")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button {
+                viewModel.removePendingAttachment()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help("Anhang entfernen")
+        }
+        .padding(8)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy) {

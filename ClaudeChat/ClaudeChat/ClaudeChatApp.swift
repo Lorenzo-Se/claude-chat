@@ -16,14 +16,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var panelController: FloatingPanelController?
     private var hotkeyManager: HotkeyManager?
+    private var chatViewModel: ChatViewModel?
 
     let store = ConversationStore()
     let processManager = ClaudeProcessManager()
+    let screenshotService = ScreenshotCaptureService()
 
     private var statusMenu: NSMenu?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+
+        ScreenshotStore.shared.cleanupOldScreenshots()
 
         setupStatusItem()
         setupPanel()
@@ -70,15 +74,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store: store,
             processManager: processManager
         )
+        chatViewModel = viewModel
 
         let chatView = ChatView(viewModel: viewModel, store: store)
         panelController = FloatingPanelController(rootView: chatView)
     }
 
     private func setupHotkeys() {
-        hotkeyManager = HotkeyManager { [weak self] in
-            self?.togglePanel()
+        hotkeyManager = HotkeyManager(
+            onToggle: { [weak self] in
+                self?.togglePanel()
+            },
+            onFullscreenCapture: { [weak self] in
+                Task { await self?.handleFullscreenCapture() }
+            },
+            onRegionCapture: { [weak self] in
+                Task { await self?.handleRegionCapture() }
+            }
+        )
+    }
+
+    private func handleFullscreenCapture() async {
+        do {
+            let path = try await screenshotService.captureFullscreen()
+            panelController?.show()
+            await chatViewModel?.sendScreenshot(path: path)
+        } catch {
+            showCaptureError(error)
         }
+    }
+
+    private func handleRegionCapture() async {
+        do {
+            let path = try await screenshotService.captureRegion()
+            panelController?.show()
+            await chatViewModel?.sendScreenshot(path: path)
+        } catch ScreenshotCaptureError.captureFailed("Auswahl abgebrochen") {
+            // Keine Meldung bei Abbruch
+        } catch {
+            showCaptureError(error)
+        }
+    }
+
+    private func showCaptureError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "Screenshot fehlgeschlagen"
+        alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc private func togglePanel() {
