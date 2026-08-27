@@ -27,6 +27,24 @@ enum SettingsOpener {
     static func restoreAccessoryPolicy() {
         NSApp.setActivationPolicy(.accessory)
     }
+
+    static func close() {
+        if let window = NSApp.keyWindow, isSettingsWindow(window) {
+            window.close()
+            return
+        }
+
+        for window in NSApp.windows where isSettingsWindow(window) {
+            window.close()
+            return
+        }
+    }
+
+    private static func isSettingsWindow(_ window: NSWindow) -> Bool {
+        window.isVisible
+            && window.alphaValue > 0
+            && !window.ignoresMouseEvents
+    }
 }
 
 /// Registriert `openSettings` in einem versteckten Fenster (muss vor der Settings-Scene deklariert sein).

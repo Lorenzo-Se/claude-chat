@@ -47,6 +47,11 @@ struct ShortcutRecorderView: View {
                 return event
             }
 
+            if event.keyCode == 53 { // Escape — Aufnahme abbrechen, Fenster nicht schließen
+                stopRecording()
+                return nil
+            }
+
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             guard !flags.isEmpty else { return event }
 
@@ -74,6 +79,7 @@ struct SettingsView: View {
     @State private var draftCLIPath = ""
     @State private var launchAtLoginError: String?
     @State private var hotkeyDrafts: [HotkeyAction: KeyCombo] = [:]
+    @State private var escapeMonitor: Any?
 
     var body: some View {
         Form {
@@ -270,12 +276,35 @@ struct SettingsView: View {
             draftCLIPath = settings.cliPathOverride
             settings.syncLaunchAtLoginFromSystem()
             reloadHotkeyDrafts()
+            startEscapeMonitor()
+        }
+        .onDisappear {
+            stopEscapeMonitor()
         }
         .onChange(of: settings.cliPathOverride) { _, newValue in
             draftCLIPath = newValue
         }
         .onChange(of: settings.hotkeys) { _, _ in
             reloadHotkeyDrafts()
+        }
+        .onExitCommand {
+            SettingsOpener.close()
+        }
+    }
+
+    private func startEscapeMonitor() {
+        stopEscapeMonitor()
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.keyCode == 53 else { return event }
+            SettingsOpener.close()
+            return nil
+        }
+    }
+
+    private func stopEscapeMonitor() {
+        if let escapeMonitor {
+            NSEvent.removeMonitor(escapeMonitor)
+            self.escapeMonitor = nil
         }
     }
 
