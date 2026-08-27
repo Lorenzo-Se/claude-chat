@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @MainActor
@@ -198,6 +199,7 @@ struct ChatView: View {
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var store: ConversationStore
     @State private var showsConversationList = false
+    @State private var inputHeight = ChatInputEditor.minHeight
 
     var body: some View {
         HStack(spacing: 0) {
@@ -325,12 +327,20 @@ struct ChatView: View {
             }
 
             HStack(alignment: .bottom, spacing: 8) {
-                TextField("Nachricht …", text: $viewModel.inputText, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...6)
-                    .onSubmit {
+                ZStack(alignment: .topLeading) {
+                    ChatInputEditor(text: $viewModel.inputText, height: $inputHeight) {
                         Task { await viewModel.sendMessage() }
                     }
+                    .frame(height: inputHeight)
+
+                    if viewModel.inputText.isEmpty {
+                        Text("Nachricht …")
+                            .foregroundStyle(.tertiary)
+                            .padding(.leading, 4)
+                            .padding(.top, 6)
+                            .allowsHitTesting(false)
+                    }
+                }
 
                 if viewModel.isLoading {
                     Button("Stop") {
@@ -397,6 +407,122 @@ struct ChatView: View {
             withAnimation(.easeOut(duration: 0.15)) {
                 proxy.scrollTo(last.id, anchor: .bottom)
             }
+        }
+    }
+}
+
+private struct ChatInputEditor: NSViewRepresentable {
+    static let minHeight: CGFloat = 24
+    static let maxHeight: CGFloat = 120
+
+    @Binding var text: String
+    @Binding var height: CGFloat
+    var onSend: () -> Void
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        guard let textView = scrollView.documentView as? NSTextView else { return scrollView }
+
+        textView.delegate = context.coordinator
+        context.coordinator.textView = textView
+        context.coordinator.scrollView = scrollView
+        context.coordinator.height = $height
+        configure(textView)
+        textView.string = text
+
+        scrollView.hasVerticalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+
+        context.coordinator.updateHeight(for: textView)
+
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+        context.coordinator.height = $height
+
+        if textView.string != text {
+            let selectedRanges = textView.selectedRanges
+            textView.string = text
+            textView.selectedRanges = selectedRanges
+        }
+
+        context.coordinator.updateHeight(for: textView)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, onSend: onSend)
+    }
+
+    private func configure(_ textView: NSTextView) {
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.font = .systemFont(ofSize: NSFont.systemFontSize)
+        textView.backgroundColor = .clear
+        textView.textContainerInset = NSSize(width: 0, height: 2)
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = [.width]
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(
+            width: 0,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+    }
+
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        @Binding var text: String
+        var height: Binding<CGFloat>?
+        var onSend: () -> Void
+        weak var textView: NSTextView?
+        weak var scrollView: NSScrollView?
+
+        private static let newlineSelectors: [Selector] = [
+            #selector(NSTextView.insertNewline(_:)),
+        ]
+
+        init(text: Binding<String>, onSend: @escaping () -> Void) {
+            _text = text
+            self.onSend = onSend
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            text = textView.string
+            updateHeight(for: textView)
+        }
+
+        func updateHeight(for textView: NSTextView) {
+            guard let layoutManager = textView.layoutManager,
+                  let textContainer = textView.textContainer else { return }
+
+            let width = scrollView?.contentSize.width ?? textView.bounds.width
+            if width > 0 {
+                textContainer.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+            }
+
+            layoutManager.ensureLayout(for: textContainer)
+            let used = layoutManager.usedRect(for: textContainer)
+            let inset = textView.textContainerInset
+            let contentHeight = used.height + inset.height * 2
+            let clamped = min(max(ceil(contentHeight), ChatInputEditor.minHeight), ChatInputEditor.maxHeight)
+
+            scrollView?.hasVerticalScroller = contentHeight > ChatInputEditor.maxHeight
+            height?.wrappedValue = clamped
+        }
+
+        func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            guard Self.newlineSelectors.contains(commandSelector) else { return false }
+            if NSEvent.modifierFlags.contains(.shift) {
+                return false
+            }
+            onSend()
+            return true
         }
     }
 }
