@@ -2,43 +2,31 @@
 
 ## Release build
 
-Universal binary (arm64 + x86_64), optimized for size:
-
-- `DEAD_CODE_STRIPPING = YES`
-- `SWIFT_COMPILATION_MODE = wholemodule`
-- `SWIFT_OPTIMIZATION_LEVEL = -O`
-- `COPY_PHASE_STRIP` / `STRIP_INSTALLED_PRODUCT`
-- `DEBUG_INFORMATION_FORMAT = dwarf` (no dSYM in the default release — smaller artifacts; set `dwarf-with-dsym` optionally for crash analysis)
+Universal binary (arm64 + x86_64) built with SwiftPM in release mode (`-O`, whole-module), local symbols stripped (`strip -x`). dSYMs stay in `.build/apple/Products/Release/` for crash analysis.
 
 ```bash
-chmod +x scripts/build-release.sh scripts/create-dmg.sh
-./scripts/build-release.sh
+./scripts/build-app.sh
 ./scripts/create-dmg.sh
 ```
 
 Output:
 
 - App: `build/Release/ClaudeChat.app`
-- DMG: `build/Release/ClaudeChat-0.1.0.dmg`
+- DMG: `build/Release/ClaudeChat-<version>.dmg` (version from `Resources/Info.plist`)
 
 ## Code signing (Developer ID)
 
-Manually or via environment variables during build:
+`scripts/build-app.sh` signs the native host and the app (hardened runtime, secure timestamp). It picks the first "Developer ID Application" identity automatically, or use:
 
 ```bash
-export DEVELOPMENT_TEAM="XXXXXXXXXX"
 export CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-./scripts/build-release.sh
+./scripts/build-app.sh
 ```
 
-Full signature including native host and embedded binaries:
+Verify:
 
 ```bash
 APP=build/Release/ClaudeChat.app
-codesign --force --options runtime --sign "$CODE_SIGN_IDENTITY" \
-  "$APP/Contents/MacOS/ClaudeChatNativeHost"
-codesign --force --options runtime --deep --sign "$CODE_SIGN_IDENTITY" \
-  "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 ```
 
@@ -76,7 +64,7 @@ xcrun notarytool submit "$DMG" \
 
 ## Hardened Runtime
 
-- `ENABLE_HARDENED_RUNTIME = YES` in the Xcode target
+- `scripts/build-app.sh` signs app and native host with `--options runtime` and `Resources/ClaudeChat.entitlements`
 - No App Sandbox (subprocesses + Native Messaging)
 - Distribution only notarized outside the Mac App Store
 

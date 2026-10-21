@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="${1:-$ROOT/build/Release/ClaudeChat.app}"
-VERSION="${MARKETING_VERSION:-0.1.0}"
+VERSION="${MARKETING_VERSION:-$(plutil -extract CFBundleShortVersionString raw "$ROOT/Resources/Info.plist")}"
 OUTPUT_DIR="${OUTPUT_DIR:-$ROOT/build/Release}"
 DMG_NAME="ClaudeChat-${VERSION}.dmg"
 DMG_PATH="$OUTPUT_DIR/$DMG_NAME"
@@ -16,7 +16,7 @@ XPI_PATH="$OUTPUT_DIR/$XPI_NAME"
 
 if [[ ! -d "$APP" ]]; then
   echo "App not found: $APP" >&2
-  echo "Run first: ./scripts/build-release.sh" >&2
+  echo "Run first: ./scripts/build-app.sh" >&2
   exit 1
 fi
 
@@ -31,8 +31,11 @@ write_install_notes() {
 Claude Chat — Installation
 ==========================
 
-1. Drag Claude Chat.app to Applications and launch it once
+1. Drag ClaudeChat.app to Applications and launch it once
    (registers the Native Messaging host for Firefox/Zen).
+   The app is not notarized: if macOS blocks it, open
+   System Settings → Privacy & Security and click "Open Anyway",
+   or run: xattr -dr com.apple.quarantine /Applications/ClaudeChat.app
 
 2. Install the Firefox extension:
    - Open Firefox or Zen

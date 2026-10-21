@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$ROOT/build/Release}"
 
 echo "==> 1/3 macOS app (Release)"
-"$ROOT/scripts/build-release.sh"
+"$ROOT/scripts/build-app.sh" release
 
 echo "==> 2/3 Firefox extension (signed)"
 "$ROOT/scripts/sign-extension.sh"

@@ -281,7 +281,7 @@ Settings UI, shortcut customization, launch at login, code signing, notarization
 
 ## 8. Packaging & Distribution
 
-- Universal Binary (arm64 + x86_64) via Xcode target "Any Mac"
+- Universal Binary (arm64 + x86_64) via `swift build --arch arm64 --arch x86_64` (`scripts/build-app.sh`)
 - Release build: dead code stripping enabled, whole-module optimization (`-O`), debug symbols removed
 - No App Sandbox (incompatible with subprocess execution & native messaging) — instead Hardened Runtime + notarization for distribution outside the App Store
 - Distribution as notarized `.app` in a `.dmg`, e.g. via own website or GitHub Releases
